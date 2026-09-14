@@ -4,21 +4,15 @@ echo ===================================================
 echo   Pride Festival - Push to GitHub
 echo ===================================================
 echo.
-echo Please create a new empty repository on github.com (if not already done).
-echo.
-set /p REPO_URL="Enter your GitHub Repository URL (e.g. https://github.com/username/repo.git): "
-if "%REPO_URL%"=="" (
-    echo No URL entered. Aborting.
-    pause
-    exit /b 1
-)
+set REPO_URL=https://github.com/anandagavhane/prideuniversal.git
 
+echo Target Repository: %REPO_URL%
 echo.
-echo Adding remote origin...
+echo Configuring remote origin...
 git remote remove origin 2>nul
 git remote add origin %REPO_URL%
 
-echo Renaming branch to main...
+echo Setting main branch...
 git branch -M main
 
 echo.
@@ -30,14 +24,13 @@ if %ERRORLEVEL% equ 0 (
     echo ===================================================
     echo SUCCESS! Your code is now on GitHub!
     echo Next step:
-    echo 1. Go to your GitHub repository in your browser.
-    echo 2. Click the 'Actions' tab.
-    echo 3. The 'Build iOS Native App (IPA)' will automatically run or click 'Run workflow'.
-    echo 4. Download your 'PrideFestival-iOS.ipa' from the Artifacts section!
+    echo 1. Open: https://github.com/anandagavhane/prideuniversal/actions
+    echo 2. The 'Build iOS Native App (IPA)' workflow will run automatically.
+    echo 3. Download 'PrideFestival-iOS.ipa' from the Artifacts section!
     echo ===================================================
 ) else (
     echo.
-    echo Error pushing to GitHub. Please verify your repository URL and GitHub login credentials.
+    echo Error pushing to GitHub. Please sign in to your GitHub account if prompted.
 )
 echo.
 pause
