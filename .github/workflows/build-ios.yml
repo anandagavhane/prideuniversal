@@ -1,0 +1,75 @@
+name: Build iOS Native App (IPA)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  build-ios:
+    name: Build iOS Native App on Cloud macOS
+    runs-on: macos-14 # Cloud macOS runner with Xcode pre-installed
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Web Production Bundle
+        working-directory: frontend
+        run: npm run build
+
+      - name: Sync Capacitor iOS Project
+        working-directory: frontend
+        run: npx cap sync ios
+
+      - name: Build iOS App with Xcode
+        working-directory: frontend/ios/App
+        run: |
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild build \
+              -workspace App.xcworkspace \
+              -scheme App \
+              -destination 'generic/platform=iOS' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              BUILD_DIR=build
+          else
+            xcodebuild build \
+              -project App.xcodeproj \
+              -scheme App \
+              -destination 'generic/platform=iOS' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              BUILD_DIR=build
+          fi
+
+      - name: Package .app into .ipa
+        working-directory: frontend/ios/App
+        run: |
+          mkdir -p build/Payload
+          cp -r build/Debug-iphoneos/App.app build/Payload/
+          cd build
+          zip -r PrideFestival-iOS.ipa Payload
+          ls -la PrideFestival-iOS.ipa
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrideFestival-iOS-Debug-IPA
+          path: frontend/ios/App/build/PrideFestival-iOS.ipa
+          retention-days: 14

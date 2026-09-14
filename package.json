@@ -1,0 +1,12 @@
+{
+  "name": "pride-universal-ganapati-2026-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm.cmd --prefix frontend run dev",
+    "build": "npm.cmd --prefix frontend run build",
+    "preview": "npm.cmd --prefix frontend run preview",
+    "cap:sync": "npm.cmd --prefix frontend run cap:sync",
+    "cap:open": "npm.cmd --prefix frontend run cap:open"
+  }
+}
+

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pride Festival</string>
+    <string name="title_activity_main">Pride Festival</string>
+    <string name="package_name">com.myapp.android</string>
+    <string name="custom_url_scheme">com.myapp.android</string>
+</resources>

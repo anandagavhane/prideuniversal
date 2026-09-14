@@ -1,0 +1,1137 @@
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem } from '../types';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS } from '../data/fallbackData';
+import { SPONSORS_CSV_URL } from './adService';
+
+export const NOMINATIONS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=20260911&single=true&output=csv';
+
+export const ACCOUNTS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmUbMzPUJKEiPO-A8VsgjmdUKSpqcM84hr-XqJcP8fz69kJme7BWhqyKrZRS55aAvCZSjR2qtYRfZY/pub?gid=0&single=true&output=csv';
+
+// Published CSV URL for Notifications Tab
+export const NOTIFICATIONS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRL9pEjn_gQvQc0I6-ZEt_UGzxIjaKNnHS8mrhRrdBcbkfCMbsDbdyZN3Jg-vhona_gqW9Cl8hXEttA/pub?gid=0&single=true&output=csv';
+
+export const GOOGLE_NOMINATION_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
+
+export const YOUTUBE_DANCE_VIDEO_URL = 'https://www.youtube.com/watch?v=FilZjigvL1c';
+export const YOUTUBE_EMBED_URL = 'https://www.youtube-nocookie.com/embed/FilZjigvL1c?autoplay=1';
+
+/**
+ * Robust CSV parser handling double quotes, commas, and line breaks
+ */
+export function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentCell = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        currentCell += '"';
+        i++; // skip escaped quote
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (char === ',' && !insideQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = '';
+    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      currentRow.push(currentCell.trim());
+      if (currentRow.some(c => c !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    if (currentRow.some(c => c !== '')) {
+      rows.push(currentRow);
+    }
+  }
+
+  return rows;
+}
+
+/**
+ * Fetch and parse Nominations Sheet data
+ */
+export async function fetchNominationsData(): Promise<NominationsDashboardData> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetch(`${NOMINATIONS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    // Look for category rows and summary row
+    // Format in sheet:
+    // Event Category, Nominations, Wing A, Wing B, % of Total
+    const categories: NominationCategoryStat[] = [];
+    let totalNominations = 67;
+    let wingATotal = 32;
+    let wingBTotal = 35;
+    let wingAPercent = '47.8%';
+    let wingBPercent = '52.2%';
+
+    const iconMap: Record<string, string> = {
+      'Emcee': '⭐',
+      'Drawing': '🎨',
+      'Dance': '💃',
+      'Singing': '🎤',
+      'Shloka': '📖',
+      'Piano Play': '🎹',
+      'Drama': '🎭'
+    };
+
+    let inBreakdownTable = false;
+
+    for (const row of rows) {
+      // Clean empty cells
+      const cleanRow = row.filter(c => c !== '');
+      if (cleanRow.length === 0) continue;
+
+      // Summary numbers row in Google Sheet: ["67", "6", "32", "35", "47.8%", "52.2%"]
+      if (/^\d+$/.test(cleanRow[0])) {
+        const parsedTotal = parseInt(cleanRow[0], 10);
+        if (!isNaN(parsedTotal) && parsedTotal > 0) {
+          totalNominations = parsedTotal;
+          if (cleanRow.length >= 4) {
+            const wA = parseInt(cleanRow[2].replace(/[^0-9]/g, ''), 10);
+            const wB = parseInt(cleanRow[3].replace(/[^0-9]/g, ''), 10);
+            if (!isNaN(wA)) wingATotal = wA;
+            if (!isNaN(wB)) wingBTotal = wB;
+          }
+          if (cleanRow.length >= 6) {
+            wingAPercent = cleanRow[4].includes('%') ? cleanRow[4] : `${cleanRow[4]}%`;
+            wingBPercent = cleanRow[5].includes('%') ? cleanRow[5] : `${cleanRow[5]}%`;
+          }
+        }
+        continue;
+      }
+
+      if (cleanRow[0].toLowerCase().includes('event category')) {
+        inBreakdownTable = true;
+        continue;
+      }
+
+      if (!inBreakdownTable) continue;
+
+      if (cleanRow.length >= 5) {
+        const cat = cleanRow[0];
+        const noms = parseInt(cleanRow[1].replace(/[^0-9]/g, ''), 10);
+        const wingA = parseInt(cleanRow[2].replace(/[^0-9]/g, ''), 10);
+        const wingB = parseInt(cleanRow[3].replace(/[^0-9]/g, ''), 10);
+        const percent = cleanRow[4];
+
+        if (!isNaN(noms)) {
+          if (cat.toLowerCase() === 'total') {
+            totalNominations = noms;
+            wingATotal = wingA;
+            wingBTotal = wingB;
+            if (totalNominations > 0) {
+              wingAPercent = `${((wingATotal / totalNominations) * 100).toFixed(1)}%`;
+              wingBPercent = `${((wingBTotal / totalNominations) * 100).toFixed(1)}%`;
+            }
+          } else if (!/^\d+$/.test(cat.trim())) {
+            categories.push({
+              category: cat,
+              nominations: noms,
+              wingA: isNaN(wingA) ? 0 : wingA,
+              wingB: isNaN(wingB) ? 0 : wingB,
+              percentOfTotal: percent.includes('%') ? percent : `${percent}%`,
+              icon: iconMap[cat] || '🏆'
+            });
+          }
+        }
+      }
+    }
+
+    if (categories.length > 0) {
+      const result: NominationsDashboardData = {
+        totalNominations,
+        totalCategories: categories.length,
+        wingATotal,
+        wingBTotal,
+        wingAPercent,
+        wingBPercent,
+        categories,
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isLive: true
+      };
+      try {
+        localStorage.setItem('cached_nominations', JSON.stringify(result));
+      } catch {
+        // safe fallback if storage is restricted
+      }
+      return result;
+    }
+  } catch (err) {
+    console.warn('Could not fetch live Nominations CSV from Google Sheets, using fallback cache:', err);
+  }
+
+  // Fallback to localStorage or static fallback
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_nominations') : null;
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return { ...parsed, isLive: false };
+    }
+  } catch {
+    // safe fallback
+  }
+
+  return FALLBACK_NOMINATIONS_DATA;
+}
+
+/**
+ * Fetch and parse Accounts Sheet data
+ */
+export async function fetchAccountsData(): Promise<AccountsData> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetch(`${ACCOUNTS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    const parseCurrency = (str?: string): number => {
+      if (!str) return 0;
+      const cleaned = str.replace(/[^0-9]/g, '');
+      const val = parseInt(cleaned, 10);
+      return isNaN(val) ? 0 : val;
+    };
+
+    let totalCollections = 0;
+    let totalExpenses = 0;
+    let netBalance = 0;
+    let contributorsCount = 0;
+    let target = 160000;
+    const wingWise: WingCollection[] = [];
+
+    let headerIndices: { col: number; exp: number; bal: number; cont: number } | null = null;
+    let wingHeaderIndices: { wing: number; col: number; share: number; donors: number } | null = null;
+    let totalsParsed = false;
+
+    for (let i = 0; i < rows.length; i++) {
+      const rawRow = rows[i];
+      const rowJoined = rawRow.join(' ').toLowerCase();
+
+      // 1. Detect Financial Overview Header row
+      if (!totalsParsed && (rowJoined.includes('total collection') || (rowJoined.includes('collection') && rowJoined.includes('expense')))) {
+        headerIndices = { col: -1, exp: -1, bal: -1, cont: -1 };
+        rawRow.forEach((cell, idx) => {
+          const c = cell.toLowerCase();
+          if (c.includes('collection')) headerIndices!.col = idx;
+          else if (c.includes('expense')) headerIndices!.exp = idx;
+          else if (c.includes('balance')) headerIndices!.bal = idx;
+          else if (c.includes('contributor') || c.includes('donor')) headerIndices!.cont = idx;
+        });
+        continue;
+      }
+
+      // 2. Parse the figures row immediately following the totals header
+      if (headerIndices && !totalsParsed) {
+        const hasNumbers = rawRow.some(c => /[0-9]/.test(c));
+        if (hasNumbers) {
+          if (headerIndices.col !== -1 && rawRow[headerIndices.col]) {
+            totalCollections = parseCurrency(rawRow[headerIndices.col]);
+          }
+          if (headerIndices.exp !== -1 && rawRow[headerIndices.exp]) {
+            totalExpenses = parseCurrency(rawRow[headerIndices.exp]);
+          }
+          if (headerIndices.bal !== -1 && rawRow[headerIndices.bal]) {
+            netBalance = parseCurrency(rawRow[headerIndices.bal]);
+          }
+          if (headerIndices.cont !== -1 && rawRow[headerIndices.cont]) {
+            contributorsCount = parseCurrency(rawRow[headerIndices.cont]);
+          }
+          totalsParsed = true;
+          headerIndices = null;
+          continue;
+        }
+      }
+
+      // 3. Detect Wing-Wise Table Header
+      if (rowJoined.includes('wing') && (rowJoined.includes('collected') || rowJoined.includes('donors') || rowJoined.includes('share'))) {
+        wingHeaderIndices = { wing: -1, col: -1, share: -1, donors: -1 };
+        rawRow.forEach((cell, idx) => {
+          const c = cell.toLowerCase();
+          if (c === 'wing' || (c.includes('wing') && !c.includes('collection'))) wingHeaderIndices!.wing = idx;
+          else if (c.includes('collected') || c.includes('amount')) wingHeaderIndices!.col = idx;
+          else if (c.includes('share') || c.includes('%')) wingHeaderIndices!.share = idx;
+          else if (c.includes('donor') || c.includes('contributor') || c.includes('count')) wingHeaderIndices!.donors = idx;
+        });
+        continue;
+      }
+
+      // 4. Parse Wing Rows
+      if (wingHeaderIndices) {
+        const wingCell = wingHeaderIndices.wing !== -1 ? (rawRow[wingHeaderIndices.wing] || '').trim() : '';
+        const wingCellLower = wingCell.toLowerCase();
+
+        // Stop on total row or end of table
+        if (wingCellLower.startsWith('total') || wingCellLower.includes('all wings')) {
+          wingHeaderIndices = null;
+          continue;
+        }
+
+        // Accept any row in the table that has a name and is not the header
+        if (wingCell && wingCellLower !== 'wing' && !wingCellLower.includes('wing-wise')) {
+          const colCell = wingHeaderIndices.col !== -1 ? rawRow[wingHeaderIndices.col] : '';
+          const shareCell = wingHeaderIndices.share !== -1 ? rawRow[wingHeaderIndices.share] : '';
+          const donorsCell = wingHeaderIndices.donors !== -1 ? rawRow[wingHeaderIndices.donors] : '';
+
+          const collected = parseCurrency(colCell);
+          const donors = parseCurrency(donorsCell);
+          const share = shareCell && shareCell.includes('%') ? shareCell.trim() : '';
+
+          if (collected > 0 || donors > 0 || share !== '') {
+            wingWise.push({
+              wing: wingCell,
+              collected,
+              collectedFormatted: `₹${collected.toLocaleString('en-IN')}`,
+              share,
+              donors
+            });
+          }
+        }
+      }
+
+      // 5. Look for target / budget in any cell
+      if (rowJoined.includes('target') || rowJoined.includes('budget')) {
+        for (const cell of rawRow) {
+          const val = parseCurrency(cell);
+          if (val > 10000 && val !== totalCollections) {
+            target = val;
+            break;
+          }
+        }
+      }
+    }
+
+    // Cross-verification & calculations
+    const wingTotal = wingWise.reduce((sum, w) => sum + w.collected, 0);
+    const wingDonors = wingWise.reduce((sum, w) => sum + w.donors, 0);
+
+    if (totalCollections === 0 && wingTotal > 0) {
+      totalCollections = wingTotal;
+    }
+    if (contributorsCount === 0 && wingDonors > 0) {
+      contributorsCount = wingDonors;
+    }
+
+    // Ensure net balance is accurately calculated (Collections - Expenses)
+    if (netBalance === 0 || netBalance === totalCollections) {
+      netBalance = totalCollections - totalExpenses;
+    }
+
+    // Ensure wing percentage shares are mathematically accurate
+    if (totalCollections > 0) {
+      wingWise.forEach(w => {
+        if (!w.share || w.share === '') {
+          w.share = `${((w.collected / totalCollections) * 100).toFixed(1)}%`;
+        }
+      });
+    }
+
+    const remainingTarget = Math.max(target - totalCollections, 0);
+    const percentageCollected = target > 0 ? Number(((totalCollections / target) * 100).toFixed(2)) : 0;
+
+    const result: AccountsData = {
+      totalCollections,
+      totalCollectionsFormatted: `₹${totalCollections.toLocaleString('en-IN')}`,
+      totalExpenses,
+      totalExpensesFormatted: `₹${totalExpenses.toLocaleString('en-IN')}`,
+      netBalance,
+      netBalanceFormatted: `₹${netBalance.toLocaleString('en-IN')}`,
+      contributorsCount,
+      target,
+      targetFormatted: `₹${target.toLocaleString('en-IN')}`,
+      remainingTarget,
+      remainingTargetFormatted: `₹${remainingTarget.toLocaleString('en-IN')}`,
+      percentageCollected,
+      wingWise: wingWise.length > 0 ? wingWise : FALLBACK_ACCOUNTS_DATA.wingWise,
+      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isLive: true
+    };
+
+    try {
+      localStorage.setItem('cached_accounts', JSON.stringify(result));
+    } catch {
+      // safe fallback if storage is restricted
+    }
+    return result;
+  } catch (err) {
+    console.warn('Could not fetch live Accounts CSV from Google Sheets, using fallback cache:', err);
+  }
+
+  // Fallback to localStorage or static fallback
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_accounts') : null;
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return { ...parsed, isLive: false };
+    }
+  } catch {
+    // safe fallback
+  }
+
+  return FALLBACK_ACCOUNTS_DATA;
+}
+
+export const GOOGLE_DRIVE_FOLDER_ID = '1jsLbYB_e37Q07GE1mYA7dR7DvWCr6WE0';
+export const GOOGLE_DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${GOOGLE_DRIVE_FOLDER_ID}`;
+
+export interface DriveFolderPhoto {
+  id: string;
+  name: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+// Live Google Apps Script Web App URL connected to Google Drive folder 1jsLbYB_e37Q07GE1mYA7dR7DvWCr6WE0
+export const GOOGLE_DRIVE_FEED_URL =
+  'https://script.google.com/macros/s/AKfycbz9KdpfxK7LqR9JNehDTH2BX4aXzfIvtJCkbK55RxWNOWsAAsRo_BwxQodztj52epuTUQ/exec';
+
+function formatPhotoTitle(rawName: string): { title: string; subtitle: string } {
+  if (!rawName) {
+    return {
+      title: 'श्री गणेशोत्सव २०२६ क्षणचित्र',
+      subtitle: 'प्राइड युनिव्हर्सल गणेशोत्सव २०२६ थेट क्षणचित्रे'
+    };
+  }
+
+  const clean = rawName.replace(/\.[^/.]+$/, '').trim();
+  const lower = clean.toLowerCase();
+
+  // 1. Dynamic Keyword Matching for newly uploaded 2026 festival photos
+  if (lower.includes('aagaman') || lower.includes('agman') || lower.includes('rally') || lower.includes('bike')) {
+    return {
+      title: 'श्री गणेश आगमन सोहळा २०२६ (Grand Aagaman 2026)',
+      subtitle: 'भगवे ध्वज, ढोल-ताशांचा गजर आणि तरुणाईच्या जल्लोषात बाप्पांचे वाजत-गाजत आगमन.'
+    };
+  }
+  if (lower.includes('aarti') || lower.includes('arti') || lower.includes('sandhya') || lower.includes('morning_aarti')) {
+    return {
+      title: 'सामूहिक महाआरती २०२६ (Maha Aarti 2026)',
+      subtitle: 'सर्व रहिवासी, महिला व बालकांच्या उपस्थितीत बाप्पांची मंगल आरती व दीप आराधना.'
+    };
+  }
+  if (lower.includes('darshan') || lower.includes('mukh') || lower.includes('idol') || lower.includes('murti')) {
+    return {
+      title: 'श्री गणेश मुख्य दर्शन २०२६ (Divine Bappa Darshan 2026)',
+      subtitle: 'प्राइड युनिव्हर्सल परिवाराचे आराध्य दैवत विघ्नहर्ता गणपती बाप्पांचे मंगलमय दर्शन.'
+    };
+  }
+  if (lower.includes('mahaprasad') || lower.includes('prasad') || lower.includes('bhojan') || lower.includes('annadan') || lower.includes('seva')) {
+    return {
+      title: 'भव्य महाप्रसाद व सेवा सोहळा २०२६ (Community Mahaprasad 2026)',
+      subtitle: 'सोसायटी सदस्यांचा एकत्र स्नेहभोजन व भाविकांसाठी पवित्र अन्नदान सेवा.'
+    };
+  }
+  if (lower.includes('satyanarayan') || lower.includes('puja') || lower.includes('pooja') || lower.includes('havan') || lower.includes('hom')) {
+    return {
+      title: 'श्री सत्यनारायण महापूजा २०२६ (Satyanarayan Maha Puja 2026)',
+      subtitle: 'सोसायटी परिवाराच्या सुख, समृद्धी व आरोग्यासाठी सामूहिक सत्यनारायण महापूजा.'
+    };
+  }
+  if (lower.includes('cultural') || lower.includes('dance') || lower.includes('lezim') || lower.includes('natak') || lower.includes('spardha') || lower.includes('drawing') || lower.includes('rangoli')) {
+    return {
+      title: 'सांस्कृतिक कार्यक्रम व स्पर्धा २०२६ (Cultural Highlights 2026)',
+      subtitle: 'सोसायटीतील बालगोपाळ, महिला व तरुणांचा कलाविष्कार, नृत्य व स्पर्धा.'
+    };
+  }
+  if (lower.includes('decor') || lower.includes('mandap') || lower.includes('lighting') || lower.includes('makhar') || lower.includes('flower')) {
+    return {
+      title: 'मंदिर व मंडप कलात्मक सजावट २०२६ (Mandap & Decor 2026)',
+      subtitle: 'सुवर्ण रोषणाई, कलात्मक मखर आणि फुलांच्या मनमोहक आराशीने सजलेला बाप्पांचा दरबार.'
+    };
+  }
+  if (lower.includes('visarjan') || lower.includes('miravnuk') || lower.includes('prasthan') || lower.includes('farewell')) {
+    return {
+      title: 'पुढच्या वर्षी लवकर या! भव्य विसर्जन २०२६ (Grand Visarjan 2026)',
+      subtitle: 'ढोल-ताशांच्या गजरात, गुलाल व फुलांच्या उधळणीत बाप्पांचे भावपूर्ण विसर्जन.'
+    };
+  }
+
+  // 2. Dictionary for known historical archive photos
+  const dict: Record<string, { title: string; subtitle: string }> = {
+    memories_2025_idol_croped: {
+      title: 'श्री गणेश मुख्य दर्शन (Divine Bappa Darshan)',
+      subtitle: 'प्राइड युनिव्हर्सल परिवाराचे आराध्य दैवत विघ्नहर्ता गणपती बाप्पांचे मंगलमय दर्शन.'
+    },
+    memories_2025_idol2: {
+      title: 'श्री गणेश मुख्य दर्शन (Divine Idol Darshan)',
+      subtitle: 'प्राइड युनिव्हर्सल परिवाराचे आराध्य दैवत विघ्नहर्ता गणपती बाप्पांचे मंगलमय दर्शन.'
+    },
+    memories_2025_idol: {
+      title: 'मंदिर व मंडप कलात्मक सजावट (Temple & Mandap Decor)',
+      subtitle: 'प्रसाद जाधव व राहुल वाळुंज यांच्या कलात्मक संयोजनाने साकारलेली सुवर्ण झालर, झुंबर व रोषणाई.'
+    },
+    memories_2025_idol3: {
+      title: 'फुलांची आकर्षक आरास (Floral Garland Darshan)',
+      subtitle: 'सुवर्ण व केशरी झेंडूच्या फुलांच्या माळांनी सजलेले बाप्पांचे विलोभनीय रूप.'
+    },
+    img_20250908_wa0020: {
+      title: 'केबल ब्रिज भव्य विसर्जन मिरवणूक (Cable Bridge Visarjan)',
+      subtitle: 'सुवर्ण रोषणाईने झगमगणाऱ्या केबल ब्रिजवरून बाप्पांची अथांग भक्तीमय अंतिम मिरवणूक.'
+    },
+    memories_visrjan_2025: {
+      title: 'पुढच्या वर्षी लवकर या! (Final Visarjan Miravnuk)',
+      subtitle: 'ढोल-ताशांच्या गजरात, गुलाल व फुलांच्या उधळणीत बाप्पांचे भावपूर्ण अंतिम विसर्जन.'
+    },
+    memories_prasthan_2025: {
+      title: 'श्री गणेश प्रस्थान व निरोप आरती (Farewell Aarti & Chariot)',
+      subtitle: 'सजविलेल्या रथासमोर बाप्पांची अंतिम प्रस्थान आरती व निरोप सोहळा.'
+    },
+    img_20250906_wa0108: {
+      title: 'भव्य बाईक रॅली व आगमन मिरवणूक (Grand Aagaman Rally)',
+      subtitle: 'भगवे ध्वज, ढोल-ताशांचा गजर आणि तरुणाईच्या जल्लोषात बाप्पांचे स्वागत.'
+    },
+    img_20250906_wa0110: {
+      title: 'पारंपारिक लेझीम व महिला मंडळ नृत्य (Traditional Lezim)',
+      subtitle: 'पारंपारिक नऊवारी साड्या नेसून महिला व युवतींनी बाप्पांच्या स्वागतात सादर केलेले लेझीम.'
+    },
+    memories_2025_aarti: {
+      title: 'सामूहिक संध्या महाआरती (Sandhya Maha Aarti)',
+      subtitle: 'सर्व रहिवासी, महिला व बालकांच्या उपस्थितीत बाप्पांची मंगल आरती व दीप आराधना.'
+    },
+    memories_mahaprasad1: {
+      title: 'सोसायटी महाप्रसाद सोहळा (Community Feast)',
+      subtitle: 'सत्यनारायण पूजेनंतर सर्व सोसायटी सदस्यांचा एकत्र स्नेहभोजन व महाप्रसाद सोहळा.'
+    },
+    memories_mahaprasad4: {
+      title: 'आनंद मेजवानी व स्नेहभोजन (Mahaprasad Hall Dining)',
+      subtitle: 'प्राइड युनिव्हर्सल परिवारातील शेकडो रहिवाशांचा एकत्र महाप्रसाद आस्वाद.'
+    },
+    memories_mahaprasad5: {
+      title: 'प्रसाद वितरण व स्वयंसेवक सेवा (Prasad Distribution Seva)',
+      subtitle: 'महिला मंडळ व स्वयंसेवकांनी प्रेमाने रहिवाशांना वाढलेला पवित्र प्रसाद.'
+    },
+    memories_mahaprasad_serve: {
+      title: 'महाप्रसाद सेवा कार्य (Volunteer Seva & Hospitality)',
+      subtitle: 'सोसायटी स्वयंसेवकांनी समर्पण भावाने केलेली अन्नदान व भोजन सेवा.'
+    },
+    img_20250906_wa0049: {
+      title: 'श्रींच्या चरणी परिवार व भाविक दर्शन (Society Devotees Group)',
+      subtitle: 'सजविलेल्या बाप्पांच्या मंडपात संपूर्ण सोसायटी परिवार व कार्यकर्त्यांचा एकत्रित फोटो.'
+    },
+    img_20250907_wa0029: {
+      title: 'मंडप व सजावट सेवा पथक (Mandap Seva Team)',
+      subtitle: 'रात्रंदिवस मेहनत करून मंदिर व मंडप साकारणारे उत्साही स्वयंसेवक.'
+    },
+    img_20250830_wa0005: {
+      title: 'बालगोपाळ चित्रकला स्पर्धा सत्कार (Drawing Awards)',
+      subtitle: 'गणेशोत्सवातील चिमुकल्या बालकलाकारांचा बाप्पांच्या चरणी सत्कार सोहळा.'
+    },
+    img_20250830_wa0007: {
+      title: 'रंगरेषांत बाप्पा - चित्रकला स्पर्धा (Little Artists)',
+      subtitle: 'विविध रंगांत बाप्पांची सुंदर चित्रे रेखाटणारे सोसायटीतील बालगोपाळ.'
+    },
+    img_20250830_wa0009: {
+      title: 'कला व कल्पकता आविष्कार (Creative Art Workshop)',
+      subtitle: 'सर्व वयोगटातील मुलांची उत्साही उपस्थिती व कलाविष्कार.'
+    },
+    img_20250906_wa0112: {
+      title: 'सोसायटी प्रांगण आगमन सोहळा (Courtyard Welcome)',
+      subtitle: 'इमारतीच्या बाल्कनी व प्रांगणातून बाप्पांवर फुलांची उधळण.'
+    },
+    img_20250907_wa0044: {
+      title: 'मुख्य प्रवेशद्वार स्वागत (Main Gate Reception)',
+      subtitle: 'पारंपारिक पोशाखात सोसायटीच्या मुख्य गेटवर बाप्पांचे जल्लोषात स्वागत.'
+    },
+    img_20250907_wa0048: {
+      title: 'महिला मंडळ उत्सव जल्लोष (Wing A Celebrations)',
+      subtitle: 'सणासुदीच्या आनंदात एकत्र आलेल्या सोसायटीतील महिला व भगिनी.'
+    },
+    img_20250907_wa0114: {
+      title: 'लेझीम व झांज पथक प्रात्यक्षिक (Lezim Performance)',
+      subtitle: 'सोसायटीच्या पटांगणात उत्साहाने सादर केलेले पारंपारिक लेझीम नृत्य.'
+    },
+    img_20250907_wa0118: {
+      title: 'तरुणाईचा जयघोष व ढोल गजर (Youth Dhol Celebrations)',
+      subtitle: 'बाप्पांच्या जयघोषात तरुणाईचा भक्तिमय व उत्साही सहभाग.'
+    },
+    memories_advik_2025: {
+      title: 'चिमुकला भाविक बालगोपाळ (Bal Devotee)',
+      subtitle: 'गणपती बाप्पांचा निष्पाप व गोड लहानांचा उत्साह दर्शविणारे क्षणचित्र.'
+    },
+    memories_ganapati_devotte1: {
+      title: 'मूर्तिकार कार्यशाळा भेट (Idol Workshop Visit)',
+      subtitle: 'बाप्पांच्या मूर्तीची निवड व आदरपूर्वक पाहणी करताना बालगोपाळ.'
+    },
+    memories_ganapati_devotee2: {
+      title: 'मूर्ती बुकिंग व आगमन संकल्प (Puja Booking & Sankalp)',
+      subtitle: 'गणेशोत्सवाची पूर्वतयारी व मूर्ती बुकिंग प्रसंगी समिती सदस्य.'
+    },
+    memories_2025_ganesh_booking: {
+      title: 'महिला मंडळ आगमन संकल्प (Puja Planning Meeting)',
+      subtitle: 'उत्सवाच्या नियोजनात उत्साहाने सहभागी झालेले महिला मंडळ.'
+    }
+  };
+
+  const matchKey = Object.keys(dict).find((k) => clean.toLowerCase().includes(k.toLowerCase()));
+  if (matchKey) {
+    return dict[matchKey];
+  }
+
+  // 3. For any camera filenames (e.g. IMG_2026..., PXL_..., WhatsApp Image...)
+  if (/^(img|pxl|dsc|whatsapp|photo)[\-_0-9]/i.test(clean)) {
+    return {
+      title: 'श्री गणेशोत्सव २०२६ क्षणचित्र (Festival 2026 Moment)',
+      subtitle: 'प्राइड युनिव्हर्सल गणेशोत्सव २०२६ थेट क्षणचित्रे (Pride Universal Festival 2026)'
+    };
+  }
+
+  // 4. Friendly title generation for any future photo added into Google Drive
+  const formatted = clean
+    .replace(/\s*-\s*copy/gi, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return {
+    title: `${formatted} २०२६`,
+    subtitle: 'प्राइड युनिव्हर्सल गणेशोत्सव २०२६ थेट क्षणचित्रे (Pride Universal Festival 2026)'
+  };
+}
+
+export async function fetchDriveFolderPhotos(feedUrl: string = GOOGLE_DRIVE_FEED_URL): Promise<DriveFolderPhoto[]> {
+  if (!feedUrl) return [];
+  try {
+    const separator = feedUrl.includes('?') ? '&' : '?';
+    const cacheBuster = `${separator}_t=${Date.now()}`;
+    const res = await fetch(`${feedUrl}${cacheBuster}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map((item, idx) => {
+        const rawName = item.name || item.title || '';
+        const info = formatPhotoTitle(rawName);
+        const fileId = item.id || `drive_${idx}`;
+        const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+        const driveThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+        return {
+          id: fileId,
+          name: rawName,
+          imageUrl: item.imageUrl || directUrl,
+          thumbnailUrl: item.thumbnailUrl || driveThumb,
+          title: info.title,
+          subtitle: info.subtitle
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('Error fetching live photos from Google Drive feed:', err);
+  }
+  return [];
+}
+
+/**
+ * Fetch notifications from published Google Sheets CSV or cached fallback
+ */
+export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_URL): Promise<NotificationItem[]> {
+  const tryParseFromUrl = async (url: string): Promise<NotificationItem[] | null> => {
+    try {
+      const separator = url.includes('?') ? '&' : '?';
+      const cacheBuster = `${separator}_t=${Date.now()}&_cb=${Math.random().toString(36).substring(7)}`;
+      const response = await fetch(`${url}${cacheBuster}`, { 
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      if (!response.ok) return null;
+      const text = await response.text();
+      const rows = parseCSV(text);
+      if (!rows || rows.length < 1) return null;
+
+      let headerRowIndex = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const rowText = rows[i].join(' ').toLowerCase();
+        if (
+          (rowText.includes('title') && rowText.includes('message')) ||
+          (rowText.includes('शीर्षक') && rowText.includes('संदेश')) ||
+          rowText.includes('सूचना फलक') ||
+          rowText.includes('announcement')
+        ) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) return null;
+
+      // Dynamically locate column indices from header row
+      const headerRow = rows[headerRowIndex];
+      const colMap = {
+        title: -1,
+        message: -1,
+        type: -1,
+        date: -1,
+        active: -1,
+        linkText: -1,
+        linkSectionId: -1
+      };
+
+      headerRow.forEach((cell, idx) => {
+        const c = cell.toLowerCase().trim();
+        if (c.includes('title') || c.includes('शीर्षक')) colMap.title = idx;
+        else if (c.includes('message') || c.includes('संदेश')) colMap.message = idx;
+        else if (c.includes('type') || c.includes('प्रकार')) colMap.type = idx;
+        else if (c.includes('date') || c.includes('तारीख') || c.includes('वेळ')) colMap.date = idx;
+        else if (c.includes('active') || c.includes('चालू') || c.includes('सक्रिय') || c.includes('status')) colMap.active = idx;
+        else if (c.includes('link text') || c.includes('बटण') || c.includes('button')) colMap.linkText = idx;
+        else if (c.includes('link section') || c.includes('section') || c.includes('विभाग')) colMap.linkSectionId = idx;
+      });
+
+      const titleIdx = colMap.title !== -1 ? colMap.title : 0;
+      const msgIdx = colMap.message !== -1 ? colMap.message : 1;
+      const typeIdx = colMap.type !== -1 ? colMap.type : 2;
+      const dateIdx = colMap.date !== -1 ? colMap.date : 3;
+      const activeIdx = colMap.active !== -1 ? colMap.active : 4;
+      const linkTextIdx = colMap.linkText !== -1 ? colMap.linkText : 5;
+      const linkSecIdx = colMap.linkSectionId !== -1 ? colMap.linkSectionId : 6;
+
+      const dataRows = rows.slice(headerRowIndex + 1);
+      const parsedItems: NotificationItem[] = [];
+
+      dataRows.forEach((cols, idx) => {
+        if (!cols || cols.length === 0 || cols.every(c => !c.trim())) return;
+
+        const title = (cols[titleIdx] || '').trim();
+        const message = (cols[msgIdx] || '').trim();
+        if (!title || !message) return;
+
+        const rawType = (cols[typeIdx] || 'info').toLowerCase().trim();
+        const validTypes: ('urgent' | 'alert' | 'info' | 'event')[] = ['urgent', 'alert', 'info', 'event'];
+        const type: 'urgent' | 'alert' | 'info' | 'event' = validTypes.includes(rawType as any)
+          ? (rawType as any)
+          : 'info';
+
+        const date = (cols[dateIdx] || '').trim() || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const rawActive = (cols[activeIdx] || 'yes').toLowerCase().trim();
+        const active = !['no', 'false', '0', 'बंद', 'नाही'].includes(rawActive);
+
+        const linkText = cols[linkTextIdx] ? cols[linkTextIdx].trim() : undefined;
+        const linkSectionId = cols[linkSecIdx] ? cols[linkSecIdx].trim().toLowerCase() : undefined;
+
+        // Content-aware unique ID so that any added or updated message in Google Sheets is immediately detected as new
+        const cleanSignature = `${title}_${message}_${date}`.replace(/\s+/g, '_').slice(0, 36);
+
+        parsedItems.push({
+          id: `notif_${idx}_${cleanSignature}`,
+          title,
+          message,
+          type,
+          date,
+          active,
+          linkText,
+          linkSectionId
+        });
+      });
+
+      return parsedItems.length > 0 ? parsedItems : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // 1. Try dedicated Notifications tab URL
+  const fromNotifUrl = await tryParseFromUrl(csvUrl);
+  if (fromNotifUrl && fromNotifUrl.length > 0) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cached_notifications', JSON.stringify(fromNotifUrl));
+    }
+    return fromNotifUrl;
+  }
+
+  // 2. Try parsing from the Accounts / Festival overview sheet (in case user added rows there)
+  if (csvUrl !== ACCOUNTS_CSV_URL) {
+    const fromAccountsUrl = await tryParseFromUrl(ACCOUNTS_CSV_URL);
+    if (fromAccountsUrl && fromAccountsUrl.length > 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cached_notifications', JSON.stringify(fromAccountsUrl));
+      }
+      return fromAccountsUrl;
+    }
+  }
+
+  // 3. Fallback to localStorage cache
+  if (typeof window !== 'undefined') {
+    const cached = localStorage.getItem('cached_notifications');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading cached notifications:', e);
+      }
+    }
+  }
+
+  // 4. Default baseline fallback
+  return FALLBACK_NOTIFICATIONS;
+}
+
+/**
+ * Request HTML5 browser notification permissions
+ */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return false;
+  }
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+  if (Notification.permission !== 'denied') {
+    try {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    } catch (err) {
+      console.warn('Permission request error:', err);
+    }
+  }
+  return false;
+}
+
+/**
+ * Trigger native browser/OS push notification popup
+ */
+export function triggerBrowserNotification(item: NotificationItem) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    new Notification(item.title, {
+      body: item.message,
+      icon: '/logo.png',
+      badge: '/logo.png',
+      tag: item.id
+    });
+  } catch (e) {
+    console.warn('Could not trigger browser notification:', e);
+  }
+}
+
+/**
+ * Dedicated published Google Sheets CSV URL for Ganapati Temple & Mandap Decoration Photos
+ */
+export const TEMPLE_DECORATION_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRy2TOtVOzK9uBkcaJAQnSPQwgcN21uqsPAUPXf2W9qt9yHm1X6BTqlwR7onzBzw7r2O4KpqsHoKI_J/pub?gid=490872032&single=true&output=csv';
+
+export interface DecorationSlide {
+  id: string;
+  imageUrl: string;
+  title: string;
+  subtitle?: string;
+  order?: number;
+}
+
+export interface TempleDecorationInfo {
+  imageUrl: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+}
+
+export const DEFAULT_DECORATION_SLIDES: DecorationSlide[] = [
+  {
+    id: 'decor-1',
+    imageUrl: '/photos/memories_2025_idol.jpeg',
+    title: 'भव्य गणेश मंदिर व मखर सजावट',
+    subtitle: 'पारंपरिक सुवर्ण मखर व विलोभनीय विद्युत रोषणाई'
+  },
+  {
+    id: 'decor-2',
+    imageUrl: '/photos/memories_2025_idol2.jpeg',
+    title: 'श्री गणेश दिव्य दर्शन व आरास',
+    subtitle: 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी स्वरूप'
+  },
+  {
+    id: 'decor-3',
+    imageUrl: '/photos/memories_2025_idol3.jpeg',
+    title: 'फुलांची नयनरम्य सजावट व सुवर्ण झालर',
+    subtitle: 'भक्तिमय वातावरणात बाप्पांचा सजलेला दरबार'
+  }
+];
+
+/**
+ * Formats any Google Drive URL into a high-speed direct CDN image stream URL
+ */
+export function formatSafeDriveUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('/')) return trimmed;
+
+  const match =
+    trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/) ||
+    trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+    trimmed.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  }
+
+  if (/^[a-zA-Z0-9_-]{25,}$/.test(trimmed)) {
+    return `https://lh3.googleusercontent.com/d/${trimmed}`;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Dynamically fetches all Ganapati Temple & Mandap Decoration Photos from Google Sheets / Drive
+ * Supports dedicated tab format: Photo URL | Title | Subtitle | Active | Order
+ * Specifically maps Name and PhotoURL columns
+ */
+export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORATION_CSV_URL): Promise<DecorationSlide[]> {
+  const cacheBuster = `&_t=${Date.now()}`;
+  const foundSlides: DecorationSlide[] = [];
+
+  // 1. If an explicit published CSV URL is provided
+  if (csvUrl) {
+    try {
+      const separator = csvUrl.includes('?') ? '&' : '?';
+      const res = await fetch(`${csvUrl}${separator}_t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (rows.length > 1) {
+          const headers = rows[0].map((h) => h.toLowerCase().trim());
+          const photoColIdx = headers.findIndex((h) => h.includes('photo') || h.includes('image') || h.includes('url') || h.includes('link'));
+          const titleColIdx = headers.findIndex((h) => h.includes('title') || h.includes('name') || h.includes('नाव') || h.includes('शीर्षक'));
+          const subtitleColIdx = headers.findIndex((h) => h.includes('subtitle') || h.includes('desc') || h.includes('वर्णन') || h.includes('caption'));
+          const activeColIdx = headers.findIndex((h) => h.includes('active') || h.includes('status') || h.includes('सक्रिय'));
+          const orderColIdx = headers.findIndex((h) => h.includes('order') || h.includes('seq') || h.includes('क्रमांक') || h.includes('sort'));
+
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const rawUrl = photoColIdx !== -1 ? row[photoColIdx] : row.find((c) => /https?:\/\/|\.jpg|\.jpeg|\.png|drive\.google\.com/i.test(c));
+            if (!rawUrl) continue;
+
+            // Check active flag if present
+            if (activeColIdx !== -1 && row[activeColIdx]) {
+              const activeVal = row[activeColIdx].toLowerCase().trim();
+              if (activeVal === 'no' || activeVal === 'false' || activeVal === '0' || activeVal === 'नाही') {
+                continue;
+              }
+            }
+
+            const formattedUrl = formatSafeDriveUrl(rawUrl);
+            let title = (titleColIdx !== -1 && row[titleColIdx]) ? row[titleColIdx].trim() : `मंदिर व मखर आरास ${i}`;
+            let subtitle = (subtitleColIdx !== -1 && row[subtitleColIdx]) ? row[subtitleColIdx].trim() : undefined;
+
+            // Festive title and subtitle context for common values
+            if (title.toLowerCase().startsWith('idol')) {
+              const num = title.replace(/[^0-9]/g, '');
+              title = num ? `श्री गणेश मूर्ती दिव्य दर्शन ${num} (Idol ${num})` : 'श्री गणेश मूर्ती दिव्य दर्शन (Idol)';
+              if (!subtitle) subtitle = 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी व विलोभनीय स्वरूप';
+            } else if (title.toLowerCase().startsWith('temple') || title.toLowerCase().startsWith('mandap')) {
+              const num = title.replace(/[^0-9]/g, '');
+              title = num ? `भव्य मंदिर व मखर सजावट ${num} (Temple & Mandap ${num})` : 'भव्य मंदिर व मखर सजावट (Temple & Mandap)';
+              if (!subtitle) subtitle = 'पारंपरिक फुले, सुवर्ण झालर व नयनरम्य विद्युत रोषणाई';
+            }
+
+            const order = (orderColIdx !== -1 && row[orderColIdx]) ? parseInt(row[orderColIdx], 10) : i;
+
+            foundSlides.push({
+              id: `decor-sheet-${i}`,
+              imageUrl: formattedUrl,
+              title,
+              subtitle,
+              order: isNaN(order) ? i : order
+            });
+          }
+        } else if (rows.length === 1) {
+          // If only 1 row without header, or raw list
+          for (let i = 0; i < rows[0].length; i++) {
+            const cell = rows[0][i];
+            if (/https?:\/\/|\.jpg|\.jpeg|\.png|drive\.google\.com/i.test(cell)) {
+              foundSlides.push({
+                id: `decor-raw-${i}`,
+                imageUrl: formatSafeDriveUrl(cell),
+                title: 'गणेश मंदिर व मखर सजावट'
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching explicit temple decoration CSV:', e);
+    }
+  }
+
+  // 2. Check Notifications Sheet for any decor/mandap/temple announcements or photo URLs
+  if (foundSlides.length === 0) {
+    try {
+      const res = await fetch(`${NOTIFICATIONS_CSV_URL}${cacheBuster}`);
+      if (res.ok) {
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (rows.length > 1) {
+          const headers = rows[0].map((h) => h.toLowerCase().trim());
+          const photoColIdx = headers.findIndex((h) => h.includes('photo') || h.includes('image') || h.includes('pic'));
+          const typeColIdx = headers.findIndex((h) => h.includes('type'));
+          const titleColIdx = headers.findIndex((h) => h.includes('title'));
+          const msgColIdx = headers.findIndex((h) => h.includes('message'));
+
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const type = (row[typeColIdx] || '').toLowerCase();
+            const title = (row[titleColIdx] || '').toLowerCase();
+            const isDecor =
+              type.includes('decor') ||
+              type.includes('mandap') ||
+              type.includes('temple') ||
+              title.includes('decor') ||
+              title.includes('mandap') ||
+              title.includes('temple') ||
+              title.includes('मखर');
+
+            if (isDecor) {
+              let photoUrl = photoColIdx !== -1 ? row[photoColIdx] : '';
+              if (!photoUrl) {
+                const foundUrl = row.find((cell) => /https?:\/\/|drive\.google\.com/i.test(cell));
+                if (foundUrl) {
+                  const urlMatch = foundUrl.match(/https?:\/\/[^\s,"]+/);
+                  if (urlMatch) photoUrl = urlMatch[0];
+                }
+              }
+
+              if (photoUrl) {
+                foundSlides.push({
+                  id: `decor-notif-${i}`,
+                  imageUrl: formatSafeDriveUrl(photoUrl),
+                  title: row[titleColIdx] || 'भव्य गणेश मंदिर व मखर',
+                  subtitle: row[msgColIdx] || undefined
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error checking notifications sheet for decor photo:', e);
+    }
+  }
+
+  // 3. Check Sponsors Sheet for any Mandap/Decoration sponsor row or poster
+  if (foundSlides.length === 0) {
+    try {
+      const res = await fetch(`${SPONSORS_CSV_URL}${cacheBuster}`);
+      if (res.ok) {
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (rows.length > 1) {
+          const headers = rows[0].map((h) => h.toLowerCase().trim());
+          const photoColIdx = headers.findIndex((h) => h.includes('photo'));
+          const companyColIdx = headers.findIndex((h) => h.includes('company'));
+          const categoryColIdx = headers.findIndex((h) => h.includes('category'));
+          const titleColIdx = headers.findIndex((h) => h.includes('title'));
+          const taglineColIdx = headers.findIndex((h) => h.includes('tagline'));
+
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const cat = (row[categoryColIdx] || '').toLowerCase();
+            const comp = (row[companyColIdx] || '').toLowerCase();
+            const tit = (row[titleColIdx] || '').toLowerCase();
+            if (
+              cat.includes('decor') ||
+              cat.includes('mandap') ||
+              comp.includes('mandap') ||
+              comp.includes('decor') ||
+              tit.includes('mandap') ||
+              tit.includes('decor')
+            ) {
+              const photoUrl = row[photoColIdx];
+              if (photoUrl) {
+                foundSlides.push({
+                  id: `decor-sponsor-${i}`,
+                  imageUrl: formatSafeDriveUrl(photoUrl),
+                  title: row[titleColIdx] || row[companyColIdx] || 'गणेश मंदिर व मंडप सजावट',
+                  subtitle: row[taglineColIdx] || undefined
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error checking sponsors sheet for decor photo:', e);
+    }
+  }
+
+  // 4. Check Google Drive folder feed for any uploaded mandap/decoration images
+  if (foundSlides.length === 0) {
+    try {
+      const drivePhotos = await fetchDriveFolderPhotos();
+      const matches = drivePhotos.filter((p) => {
+        const name = (p.name || p.title || '').toLowerCase();
+        return name.includes('mandap') || name.includes('decor') || name.includes('makhar') || name.includes('temple');
+      });
+      matches.forEach((match, idx) => {
+        if (match && (match.imageUrl || match.thumbnailUrl)) {
+          foundSlides.push({
+            id: `decor-drive-${idx}`,
+            imageUrl: formatSafeDriveUrl(match.imageUrl || match.thumbnailUrl),
+            title: match.title || 'भव्य गणेश मंदिर व मखर सजावट',
+            subtitle: match.subtitle
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('Error checking drive photos for decor photo:', e);
+    }
+  }
+
+  // Sort by order if available
+  if (foundSlides.length > 0) {
+    foundSlides.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    return foundSlides;
+  }
+
+  // Gracefully fallback to high-res local photos
+  return DEFAULT_DECORATION_SLIDES;
+}
+
+/**
+ * Dynamically fetches the Ganapati Temple & Mandap Decoration Photo from Google Sheets / Drive
+ * (Backward compatibility helper that returns the primary slide)
+ */
+export async function fetchTempleDecorationData(csvUrl: string = TEMPLE_DECORATION_CSV_URL): Promise<TempleDecorationInfo | null> {
+  const slides = await fetchTempleDecorationSlides(csvUrl);
+  if (slides && slides.length > 0) {
+    return {
+      imageUrl: slides[0].imageUrl,
+      title: slides[0].title,
+      subtitle: slides[0].subtitle
+    };
+  }
+  return null;
+}
+

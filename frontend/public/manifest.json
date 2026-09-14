@@ -1,0 +1,18 @@
+{
+  "short_name": "Pride Festival",
+  "name": "Pride Universal Ganesh Festival 2026",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FEF7DA",
+  "theme_color": "#F5AF19",
+  "display": "standalone",
+  "orientation": "portrait"
+}
+
