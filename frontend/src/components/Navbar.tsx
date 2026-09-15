@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
+  Home,
   Calendar, 
   Trophy, 
   BarChart3, 
@@ -15,10 +16,7 @@ import {
   Play,
   Bell,
   Search,
-  ChevronDown,
-  Award,
-  ClipboardList,
-  Mic
+  ChevronDown
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -58,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isCompetitionsMenuOpen, setIsCompetitionsMenuOpen] = useState(false);
+  const [isEventsMenuOpen, setIsEventsMenuOpen] = useState(false);
   const [isPinnedOpen, setIsPinnedOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,13 +66,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setIsCompetitionsMenuOpen(true);
+    setIsEventsMenuOpen(true);
   };
 
   const handleMouseLeave = () => {
     if (isPinnedOpen) return; // If clicked open, keep it open until click outside or selection
     closeTimeoutRef.current = setTimeout(() => {
-      setIsCompetitionsMenuOpen(false);
+      setIsEventsMenuOpen(false);
     }, 250);
   };
 
@@ -83,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setIsCompetitionsMenuOpen(prev => {
+    setIsEventsMenuOpen(prev => {
       const next = !prev;
       setIsPinnedOpen(next);
       return next;
@@ -95,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setIsCompetitionsMenuOpen(false);
+    setIsEventsMenuOpen(false);
     setIsPinnedOpen(false);
   };
 
@@ -120,53 +118,29 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, []);
 
-  const competitionSubmenu = [
+  // 2.1 Competitions submenu under Events
+  const eventsSubmenu = [
     { 
       id: 'competitions', 
       label: 'Competitions', 
-      marathi: 'स्पर्धा व नियम', 
+      marathi: 'कला व क्रीडा स्पर्धा', 
       icon: Trophy,
-      desc: 'All 7 events, rules & video'
-    },
-    { 
-      id: 'winners', 
-      label: 'Winners', 
-      marathi: 'अधिकृत निकाल व विजेते', 
-      icon: Award,
-      badge: 'Results Out',
-      desc: 'Podium champions & prizes'
-    },
-    { 
-      id: 'emcees', 
-      label: 'Selected Emcees', 
-      marathi: 'निवडक सूत्रसंचालक', 
-      icon: Mic,
-      badge: selectedEmceesCount ? `${selectedEmceesCount} Hosts` : '6 Hosts',
-      badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      desc: 'Official stage hosts & anchors'
-    },
-    { 
-      id: 'nominations', 
-      label: 'Nominations', 
-      marathi: 'सहभाग नोंदणी डॅशबोर्ड', 
-      icon: ClipboardList, 
-      badge: totalNominations ? `${totalNominations}` : undefined,
-      desc: 'Live participant entries'
+      desc: 'All 7 talent events, rules & competitions'
     },
   ];
 
+  // Exactly requested menus: 1) Home, 2) Events (2.1 Competitions), 3) Aarti, 4) Memories, 5) Accounts, 6) Committee
   const navItems = [
-    { id: 'schedule', label: 'Schedules', icon: Calendar },
+    { id: 'home', label: 'Home', icon: Home },
     { 
-      id: 'competitions', 
-      label: 'Competitions', 
-      icon: Trophy, 
-      hasSubmenu: true,
-      badge: totalNominations ? `${totalNominations}` : undefined 
+      id: 'schedule', 
+      label: 'Events', 
+      icon: Calendar, 
+      hasSubmenu: true
     },
-    { id: 'accounts', label: 'Accounts', icon: BarChart3 },
     { id: 'aarti', label: 'Aarti', icon: Flame },
     { id: 'gallery', label: 'Memories', icon: ImageIcon },
+    { id: 'accounts', label: 'Accounts', icon: BarChart3 },
     { id: 'committee', label: 'Committee', icon: Users },
   ];
 
@@ -177,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const targetId = id === 'emcees' ? 'selected-emcees' : id;
+    const targetId = (id === 'events' || id === 'schedule') ? 'schedule' : id === 'emcees' ? 'selected-emcees' : id;
     const element = document.getElementById(targetId) || document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -261,9 +235,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
 
-              // Submenu item for Competitions, Winners, Emcees & Nominations
+              // Submenu item for Events (with 2.1 Competitions)
               if (item.hasSubmenu) {
-                const isGroupActive = ['competitions', 'winners', 'nominations', 'emcees', 'selected-emcees'].includes(activeTab);
+                const isGroupActive = ['events', 'schedule', 'competitions'].includes(activeTab);
                 return (
                   <div
                     key={item.id}
@@ -273,31 +247,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onMouseLeave={handleMouseLeave}
                   >
                     <button
-                      onClick={handleDropdownToggle}
+                      onClick={() => {
+                        handleNavClick('schedule');
+                        closeDropdown();
+                      }}
                       className={`relative px-3 py-2 rounded-xl text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                         isGroupActive
                           ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300 ring-2 ring-amber-400/50 scale-105'
                           : 'text-red-950 hover:text-red-800 hover:bg-white/40'
                       }`}
-                      aria-expanded={isCompetitionsMenuOpen}
+                      aria-expanded={isEventsMenuOpen}
                       aria-haspopup="true"
                     >
                       <Icon className={`w-4 h-4 ${isGroupActive ? 'text-amber-300' : 'text-red-900'}`} />
                       <span>{item.label}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCompetitionsMenuOpen ? 'rotate-180 text-amber-300' : 'text-red-900/80'}`} />
-                      {item.badge && (
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                          isGroupActive ? 'bg-amber-300 text-red-950' : 'bg-red-800 text-amber-100'
-                        }`}>
-                          {item.badge}
-                        </span>
-                      )}
+                      <ChevronDown 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDropdownToggle();
+                        }}
+                        className={`w-3.5 h-3.5 transition-transform duration-200 hover:scale-125 ${isEventsMenuOpen ? 'rotate-180 text-amber-300' : 'text-red-900/80'}`} 
+                      />
                     </button>
 
                     {/* Submenu Dropdown Card with seamless 0-gap hover bridge */}
-                    {isCompetitionsMenuOpen && (
+                    {isEventsMenuOpen && (
                       <div 
-                        className="absolute top-full left-0 pt-2 w-80 z-50 animate-fadeIn"
+                        className="absolute top-full left-0 pt-2 w-64 z-50 animate-fadeIn"
                         role="menu"
                       >
                         {/* Invisible hover bridge covering the gap between button and card */}
@@ -305,12 +281,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-amber-400 p-2 relative z-10">
                           <div className="px-3 py-1.5 border-b border-amber-200 mb-1 text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center justify-between">
-                            <span>Competitions &amp; Events</span>
-                            <span className="text-slate-500 font-marathi">कला व क्रीडा</span>
+                            <span>Events &amp; Competitions</span>
+                            <span className="text-slate-500 font-marathi">कार्यक्रम व स्पर्धा</span>
                           </div>
-                          {competitionSubmenu.map(sub => {
+                          {eventsSubmenu.map(sub => {
                             const SubIcon = sub.icon;
-                            const isSubActive = activeTab === sub.id || (sub.id === 'emcees' && activeTab === 'selected-emcees');
+                            const isSubActive = activeTab === sub.id;
                             return (
                               <button
                                 key={sub.id}
@@ -338,15 +314,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                                     <span className={`text-xs font-black ${isSubActive ? 'text-white' : 'text-red-950'}`}>
                                       {sub.label}
                                     </span>
-                                    {sub.badge && (
-                                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black border ${
-                                        isSubActive
-                                          ? 'bg-amber-300 text-red-950 border-amber-200'
-                                          : 'bg-amber-100 text-amber-900 border-amber-300'
-                                      }`}>
-                                        {sub.badge}
-                                      </span>
-                                    )}
                                   </div>
                                   <div className={`text-[10px] ${isSubActive ? 'text-amber-200' : 'text-slate-500 font-marathi'}`}>
                                     {sub.marathi}
@@ -511,60 +478,123 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Grouped Competitions, Winners, Emcees & Nominations Card */}
-          <div className="mb-3 rounded-2xl bg-white/95 border-2 border-amber-300 p-2.5 shadow-sm">
-            <div className="flex items-center justify-between px-2 py-1 mb-1.5 border-b border-amber-200">
-              <div className="flex items-center gap-1.5 font-black text-xs text-red-950">
-                <Trophy className="w-3.5 h-3.5 text-festival-saffron" />
-                <span>Competitions &amp; Events</span>
+          {/* Mobile Navigation List matching exact requested menus */}
+          <div className="space-y-1.5 mb-4">
+            {/* 1. Home */}
+            <button
+              onClick={() => handleNavClick('home')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                activeTab === 'home'
+                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
+                  : 'bg-white/90 text-red-950 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Home className={`w-4 h-4 ${activeTab === 'home' ? 'text-amber-300' : 'text-red-900'}`} />
+                <span className="text-sm">Home</span>
               </div>
-              <span className="text-[10px] font-marathi text-amber-900 font-bold">कला व क्रीडा</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {competitionSubmenu.map(sub => {
-                const SubIcon = sub.icon;
-                const isSubActive = activeTab === sub.id || (sub.id === 'emcees' && activeTab === 'selected-emcees');
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => handleNavClick(sub.id)}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl text-center transition-all cursor-pointer ${
-                      isSubActive
-                        ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border border-amber-300'
-                        : 'bg-amber-50 hover:bg-amber-100/80 text-red-950 border border-amber-200/80'
-                    }`}
-                  >
-                    <SubIcon className={`w-4 h-4 mb-1 ${isSubActive ? 'text-amber-300' : 'text-amber-700'}`} />
-                    <span className="text-[11px] font-black leading-tight">{sub.label}</span>
-                    <span className="text-[9px] text-slate-500 font-medium font-marathi leading-none mt-0.5">
-                      {sub.id === 'competitions' ? 'नियम' : sub.id === 'winners' ? 'निकाल' : sub.id === 'emcees' ? '६ सूत्रसंचालक' : `${totalNominations || ''} नोंदी`}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+              <span className="text-[10px] text-slate-500 font-marathi">मुख्य पान</span>
+            </button>
 
-          {/* Other Primary Links Grid */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {navItems.filter(item => !item.hasSubmenu).map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
+            {/* 2. Events & 2.1 Competitions */}
+            <div className="bg-white/90 rounded-xl border border-amber-300/80 overflow-hidden shadow-xs">
+              <button
+                onClick={() => handleNavClick('schedule')}
+                className={`w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all cursor-pointer ${
+                  activeTab === 'schedule' || activeTab === 'events'
+                    ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md'
+                    : 'text-red-950 hover:bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar className={`w-4 h-4 ${activeTab === 'schedule' || activeTab === 'events' ? 'text-amber-300' : 'text-red-900'}`} />
+                  <span className="text-sm">Events</span>
+                </div>
+                <span className="text-[10px] text-amber-800 font-marathi">१२ दिवस कार्यक्रम</span>
+              </button>
+
+              {/* 2.1 Competitions Sub-item */}
+              <div className="pl-6 pr-2 py-1.5 bg-amber-50/80 border-t border-amber-200/80">
                 <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
-                    : 'bg-white/80 text-red-950 hover:bg-white shadow-xs'
+                  onClick={() => handleNavClick('competitions')}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'competitions'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-sm'
+                      : 'text-slate-800 hover:bg-amber-100/90'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-amber-300' : 'text-red-900'}`} />
-                  <span className="truncate">{item.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Trophy className={`w-4 h-4 ${activeTab === 'competitions' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span className="font-extrabold">2.1 Competitions</span>
+                  </div>
+                  <span className="text-[10px] text-slate-600 font-marathi font-medium">स्पर्धा व निकाल</span>
                 </button>
-              );
-            })}
+              </div>
+            </div>
+
+            {/* 3. Aarti */}
+            <button
+              onClick={() => handleNavClick('aarti')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                activeTab === 'aarti'
+                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
+                  : 'bg-white/90 text-red-950 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Flame className={`w-4 h-4 ${activeTab === 'aarti' ? 'text-amber-300' : 'text-red-900'}`} />
+                <span className="text-sm">Aarti</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-marathi">आरती संग्रह</span>
+            </button>
+
+            {/* 4. Memories */}
+            <button
+              onClick={() => handleNavClick('gallery')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                activeTab === 'gallery'
+                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
+                  : 'bg-white/90 text-red-950 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <ImageIcon className={`w-4 h-4 ${activeTab === 'gallery' ? 'text-amber-300' : 'text-red-900'}`} />
+                <span className="text-sm">Memories</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-marathi">छायाचित्रे</span>
+            </button>
+
+            {/* 5. Accounts */}
+            <button
+              onClick={() => handleNavClick('accounts')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                activeTab === 'accounts'
+                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
+                  : 'bg-white/90 text-red-950 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <BarChart3 className={`w-4 h-4 ${activeTab === 'accounts' ? 'text-amber-300' : 'text-red-900'}`} />
+                <span className="text-sm">Accounts</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-marathi">जमा-खर्च</span>
+            </button>
+
+            {/* 6. Committee */}
+            <button
+              onClick={() => handleNavClick('committee')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                activeTab === 'committee'
+                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
+                  : 'bg-white/90 text-red-950 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Users className={`w-4 h-4 ${activeTab === 'committee' ? 'text-amber-300' : 'text-red-900'}`} />
+                <span className="text-sm">Committee</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-marathi">उत्सव समिती</span>
+            </button>
           </div>
           {SHOW_NOMINATION_CTA && (
             <a

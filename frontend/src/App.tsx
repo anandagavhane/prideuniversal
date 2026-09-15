@@ -225,7 +225,7 @@ export function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const targetId = sectionId === 'emcees' ? 'selected-emcees' : sectionId;
+    const targetId = sectionId === 'events' ? 'schedule' : sectionId === 'emcees' ? 'selected-emcees' : sectionId;
     const element = document.getElementById(targetId) || document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
