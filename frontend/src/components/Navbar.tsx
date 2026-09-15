@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Calendar, 
   Trophy, 
@@ -14,7 +14,10 @@ import {
   Pause,
   Play,
   Bell,
-  Search
+  Search,
+  ChevronDown,
+  Award,
+  ClipboardList
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -52,15 +55,62 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCompetitionsMenuOpen, setIsCompetitionsMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const navItems = [
-    { id: 'schedule', label: 'Schedules', icon: Calendar },
-    { id: 'competitions', label: 'Competitions', icon: Trophy },
-    { id: 'winners', label: 'Winners', icon: Trophy },
+  // Close desktop dropdown on outside click or escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCompetitionsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCompetitionsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const competitionSubmenu = [
+    { 
+      id: 'competitions', 
+      label: 'Competitions', 
+      marathi: 'स्पर्धा व नियम', 
+      icon: Trophy,
+      desc: 'All 7 events, rules & video'
+    },
+    { 
+      id: 'winners', 
+      label: 'Winners', 
+      marathi: 'अधिकृत निकाल व विजेते', 
+      icon: Award,
+      badge: 'Results Out',
+      desc: 'Podium champions & prizes'
+    },
     { 
       id: 'nominations', 
       label: 'Nominations', 
+      marathi: 'सहभाग नोंदणी डॅशबोर्ड', 
+      icon: ClipboardList, 
+      badge: totalNominations ? `${totalNominations}` : undefined,
+      desc: 'Live participant entries'
+    },
+  ];
+
+  const navItems = [
+    { id: 'schedule', label: 'Schedules', icon: Calendar },
+    { 
+      id: 'competitions', 
+      label: 'Competitions', 
       icon: Trophy, 
+      hasSubmenu: true,
       badge: totalNominations ? `${totalNominations}` : undefined 
     },
     { id: 'accounts', label: 'Accounts', icon: BarChart3 },
@@ -158,12 +208,109 @@ export const Navbar: React.FC<NavbarProps> = ({
           <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
             {navItems.map((item) => {
               const Icon = item.icon;
+
+              // Submenu item for Competitions, Winners & Nominations
+              if (item.hasSubmenu) {
+                const isGroupActive = ['competitions', 'winners', 'nominations'].includes(activeTab);
+                return (
+                  <div
+                    key={item.id}
+                    ref={dropdownRef}
+                    className="relative"
+                    onMouseEnter={() => setIsCompetitionsMenuOpen(true)}
+                    onMouseLeave={() => setIsCompetitionsMenuOpen(false)}
+                  >
+                    <button
+                      onClick={() => setIsCompetitionsMenuOpen(prev => !prev)}
+                      className={`relative px-3 py-2 rounded-xl text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isGroupActive
+                          ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300 ring-2 ring-amber-400/50 scale-105'
+                          : 'text-red-950 hover:text-red-800 hover:bg-white/40'
+                      }`}
+                      aria-expanded={isCompetitionsMenuOpen}
+                      aria-haspopup="true"
+                    >
+                      <Icon className={`w-4 h-4 ${isGroupActive ? 'text-amber-300' : 'text-red-900'}`} />
+                      <span>{item.label}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCompetitionsMenuOpen ? 'rotate-180 text-amber-300' : 'text-red-900/80'}`} />
+                      {item.badge && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                          isGroupActive ? 'bg-amber-300 text-red-950' : 'bg-red-800 text-amber-100'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Submenu Dropdown Card */}
+                    {isCompetitionsMenuOpen && (
+                      <div 
+                        className="absolute top-full left-0 mt-1.5 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-amber-400 p-2 z-50 animate-fadeIn"
+                        role="menu"
+                      >
+                        <div className="px-3 py-1.5 border-b border-amber-200 mb-1 text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center justify-between">
+                          <span>Competitions &amp; Events</span>
+                          <span className="text-slate-500 font-marathi">कला व क्रीडा</span>
+                        </div>
+                        {competitionSubmenu.map(sub => {
+                          const SubIcon = sub.icon;
+                          const isSubActive = activeTab === sub.id;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNavClick(sub.id);
+                                setIsCompetitionsMenuOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl transition-all flex items-start gap-2.5 my-0.5 group cursor-pointer ${
+                                isSubActive
+                                  ? 'bg-gradient-to-r from-red-800 to-red-950 text-white shadow-md'
+                                  : 'hover:bg-amber-100/90 text-slate-800'
+                              }`}
+                              role="menuitem"
+                            >
+                              <div className={`p-2 rounded-lg flex-shrink-0 mt-0.5 ${
+                                isSubActive 
+                                  ? 'bg-white/20 text-amber-300' 
+                                  : 'bg-amber-100 text-amber-800 group-hover:bg-amber-200'
+                              }`}>
+                                <SubIcon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className={`text-xs font-black ${isSubActive ? 'text-white' : 'text-red-950'}`}>
+                                    {sub.label}
+                                  </span>
+                                  {sub.badge && (
+                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black border ${
+                                      isSubActive
+                                        ? 'bg-amber-300 text-red-950 border-amber-200'
+                                        : 'bg-amber-100 text-amber-900 border-amber-300'
+                                    }`}>
+                                      {sub.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className={`text-[10px] ${isSubActive ? 'text-amber-200' : 'text-slate-500 font-marathi'}`}>
+                                  {sub.marathi}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`relative px-3 py-2 rounded-xl text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 ${
+                  className={`relative px-3 py-2 rounded-xl text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300 ring-2 ring-amber-400/50 scale-105'
                       : 'text-red-950 hover:text-red-800 hover:bg-white/40'
@@ -171,13 +318,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-red-900'}`} />
                   <span>{item.label}</span>
-                  {item.badge && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      isActive ? 'bg-amber-300 text-red-950' : 'bg-red-800 text-amber-100'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -314,15 +454,50 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
+          {/* Grouped Competitions, Winners & Nominations Card */}
+          <div className="mb-3 rounded-2xl bg-white/95 border-2 border-amber-300 p-2.5 shadow-sm">
+            <div className="flex items-center justify-between px-2 py-1 mb-1.5 border-b border-amber-200">
+              <div className="flex items-center gap-1.5 font-black text-xs text-red-950">
+                <Trophy className="w-3.5 h-3.5 text-festival-saffron" />
+                <span>Competitions &amp; Events</span>
+              </div>
+              <span className="text-[10px] font-marathi text-amber-900 font-bold">कला व क्रीडा</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {competitionSubmenu.map(sub => {
+                const SubIcon = sub.icon;
+                const isSubActive = activeTab === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => handleNavClick(sub.id)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl text-center transition-all cursor-pointer ${
+                      isSubActive
+                        ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border border-amber-300'
+                        : 'bg-amber-50 hover:bg-amber-100/80 text-red-950 border border-amber-200/80'
+                    }`}
+                  >
+                    <SubIcon className={`w-4 h-4 mb-1 ${isSubActive ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span className="text-[11px] font-black leading-tight">{sub.label}</span>
+                    <span className="text-[9px] text-slate-500 font-medium font-marathi leading-none mt-0.5">
+                      {sub.id === 'competitions' ? 'नियम' : sub.id === 'winners' ? 'निकाल' : `${totalNominations || ''} नोंदी`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Other Primary Links Grid */}
           <div className="grid grid-cols-2 gap-2 mb-4">
-            {navItems.map((item) => {
+            {navItems.filter(item => !item.hasSubmenu).map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold text-left transition-all ${
+                  className={`flex items-center gap-2 p-3 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border-2 border-amber-300'
                     : 'bg-white/80 text-red-950 hover:bg-white shadow-xs'
@@ -330,11 +505,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-amber-300' : 'text-red-900'}`} />
                   <span className="truncate">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto text-[10px] bg-red-700 text-white px-1.5 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
