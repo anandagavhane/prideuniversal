@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Trophy, Medal, Sparkles, RefreshCw, ExternalLink, Award, Crown, Star } from 'lucide-react';
+import { Trophy, Medal, Sparkles, RefreshCw, Award, Crown, Star } from 'lucide-react';
 import { CompetitionWinner } from '../types';
-import { WINNERS_CSV_URL } from '../services/googleSheetsService';
 
 interface WinnersSectionProps {
   winners: CompetitionWinner[];
@@ -119,13 +118,13 @@ export const WinnersSection: React.FC<WinnersSectionProps> = ({
             Heartiest congratulations to all the brilliant participants and winners of Pride Universal Ganesh Festival 2026!
           </p>
 
-          {/* Live Sync Status & Manual Refresh Bar */}
+          {/* Live Status & Manual Refresh Bar */}
           <div className="mt-4 inline-flex items-center gap-2.5 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
             </span>
-            <span className="font-semibold">Live Results from Google Sheet</span>
+            <span className="font-semibold">Live Results</span>
             {lastUpdated && (
               <span className="text-[11px] text-emerald-600 hidden sm:inline">
                 • {lastUpdated}
@@ -135,21 +134,12 @@ export const WinnersSection: React.FC<WinnersSectionProps> = ({
               <button
                 onClick={onRefresh}
                 disabled={isLoading}
-                title="Sync latest winners from Google Sheet"
-                className="ml-1 p-1 hover:bg-emerald-100 rounded-full transition-colors text-emerald-700"
+                title="Refresh latest winners"
+                className="ml-1 p-1 hover:bg-emerald-100 rounded-full transition-colors text-emerald-700 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             )}
-            <a
-              href={WINNERS_CSV_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open Google Sheet Source"
-              className="p-1 hover:bg-emerald-100 rounded-full transition-colors text-emerald-700"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
           </div>
         </div>
 

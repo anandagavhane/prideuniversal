@@ -367,7 +367,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
               className={`p-1.5 sm:p-2 rounded-full bg-black/80 backdrop-blur-md hover:bg-amber-400 hover:text-red-950 text-amber-200 border border-amber-400/30 shadow-xl transition-all cursor-pointer ${
                 isSyncing ? 'animate-spin text-amber-300' : ''
               }`}
-              title="नवीन फोटो रिफ्रेश करा (Sync Google Drive)"
+              title="नवीन फोटो रिफ्रेश करा / Refresh photos"
               aria-label="Refresh photos"
             >
               <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

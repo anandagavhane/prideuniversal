@@ -53,7 +53,7 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-slate-700 font-medium shadow-xs">
               <span className={`w-2 h-2 rounded-full ${data.isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
-              <span>{data.isLive ? 'Live Sync Active' : 'Cached Snapshot'}</span>
+              <span>{data.isLive ? 'Live Updates' : 'Updated'}</span>
               {syncCountdown !== undefined && (
                 <span className="text-emerald-700 font-semibold bg-emerald-100/80 px-1.5 py-0.5 rounded text-[11px]">
                   Next sync in {syncCountdown}s

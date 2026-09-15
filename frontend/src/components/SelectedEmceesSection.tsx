@@ -1,7 +1,6 @@
 import React from 'react';
-import { Mic, Sparkles, CheckCircle2, Trophy, RefreshCw, ExternalLink, Users, Star } from 'lucide-react';
+import { Mic, Sparkles, CheckCircle2, Trophy, RefreshCw, Users, Star } from 'lucide-react';
 import { SelectedEmcee } from '../types';
-import { SELECTED_EMCEES_CSV_URL } from '../services/googleSheetsService';
 
 interface SelectedEmceesSectionProps {
   emcees: SelectedEmcee[];
@@ -44,11 +43,11 @@ export const SelectedEmceesSection: React.FC<SelectedEmceesSectionProps> = ({
             </p>
           </div>
 
-          {/* Sync status & Actions */}
+          {/* Status & Actions */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-xs bg-white/90 border border-amber-300 px-3 py-1.5 rounded-full text-slate-800 font-medium shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="font-semibold text-emerald-800">Live Sheet Synced</span>
+              <span className="font-semibold text-emerald-800">Verified List</span>
               {lastUpdated && (
                 <span className="text-slate-500 hidden sm:inline">• {lastUpdated}</span>
               )}
@@ -58,22 +57,12 @@ export const SelectedEmceesSection: React.FC<SelectedEmceesSectionProps> = ({
               <button
                 onClick={onRefresh}
                 disabled={isLoading}
-                title="Sync from Google Sheet"
-                className="p-2 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-950 border border-amber-400 transition-transform active:scale-95 disabled:opacity-50"
+                title="Refresh list"
+                className="p-2 rounded-full bg-amber-200/80 hover:bg-amber-300 text-amber-950 border border-amber-400 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             )}
-
-            <a
-              href={SELECTED_EMCEES_CSV_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open Google Sheet Source"
-              className="p-2 rounded-full bg-white/90 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
           </div>
         </div>
 
@@ -156,15 +145,12 @@ export const SelectedEmceesSection: React.FC<SelectedEmceesSectionProps> = ({
         </div>
 
         {/* Congratulatory Footer Note */}
-        <div className="relative z-10 mt-6 pt-4 border-t border-amber-300/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-amber-950 font-medium">
+        <div className="relative z-10 mt-6 pt-4 border-t border-amber-300/80 flex items-center justify-center text-xs text-amber-950 font-medium text-center">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-festival-saffron flex-shrink-0" />
             <span>
               All selected anchors will host cultural evenings, sports commentary, and games competitions!
             </span>
-          </div>
-          <div className="text-[11px] text-slate-600">
-            Source: Cultural Selection Panel
           </div>
         </div>
       </div>

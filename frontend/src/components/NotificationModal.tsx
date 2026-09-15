@@ -167,11 +167,11 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               <button
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                title="Fetch latest announcements from Google Sheet"
+                title="Fetch latest announcements"
                 className="inline-flex items-center gap-1 text-xs font-bold text-amber-950 bg-white hover:bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-amber-700 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>{isRefreshing ? 'Syncing...' : 'Sync Sheet'}</span>
+                <span>{isRefreshing ? 'Syncing...' : 'Refresh'}</span>
               </button>
             )}
           </div>

@@ -196,10 +196,10 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white text-slate-800 border border-amber-300 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                title="Google Sheets मधील नवीन जाहिराती लगेच सिंक करा"
+                title="जाहिराती रिफ्रेश करा / Refresh ads"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-amber-700 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>Sync Ads</span>
+                <span>Refresh</span>
               </button>
             )}
 

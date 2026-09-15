@@ -261,10 +261,10 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                     onClick={onRefresh}
                     disabled={isRefreshing}
                     className="inline-flex items-center gap-1.5 text-[11px] font-bold text-red-900 bg-amber-200/80 hover:bg-amber-300 px-2.5 py-1 rounded-lg border border-amber-300 shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                    title="Google Sheet मधून फोटो रिफ्रेश करा / Sync latest photos from sheet"
+                    title="रिफ्रेश करा / Refresh photos"
                   >
                     <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    <span>Live Sync</span>
+                    <span>Refresh</span>
                   </button>
                 )}
               </div>
@@ -298,11 +298,6 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                     <span className="font-extrabold text-sm text-slate-900">Rahul Walunj</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-1 text-[11px] text-amber-900/80 flex items-center gap-1.5 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Google Sheet Live Sync: सर्व छायाचित्रे थेट गुगल ड्राईव्हवरून स्वयंचलित अपडेट होतात.</span>
               </div>
             </div>
 
