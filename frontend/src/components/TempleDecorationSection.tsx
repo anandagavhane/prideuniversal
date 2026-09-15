@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, Layers, Play, Film } from 'lucide-react';
+import { Sparkles, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, Layers, Play, Film, Maximize2 } from 'lucide-react';
 import { 
   fetchTempleDecorationSlides, 
   DecorationSlide, 
@@ -70,27 +70,6 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
 
   const slides = (propSlides && propSlides.length > 0) ? propSlides : internalSlides;
 
-  // Auto-advance carousel every 4.5 seconds (paused on hover or when modal is open)
-  useEffect(() => {
-    if (isHovered || isImageModalOpen || slides.length <= 1) return;
-
-    const timer = setInterval(() => {
-      setCurrentSlideIndex((prevIndex) => (prevIndex + 1) % slides.length);
-    }, 4500);
-
-    return () => clearInterval(timer);
-  }, [isHovered, isImageModalOpen, slides.length]);
-
-  const handlePrevSlide = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  const handleNextSlide = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCurrentSlideIndex((prev) => (prev + 1) % slides.length);
-  };
-
   const currentSlide = slides[currentSlideIndex] || slides[0] || {
     id: 'fallback',
     imageUrl: '/photos/memories_2025_idol.jpeg',
@@ -102,6 +81,27 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
     currentSlide.mediaType === 'youtube' || 
     currentSlide.mediaType === 'drive-video' || 
     currentSlide.mediaType === 'video';
+
+  const handlePrevSlide = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const handleNextSlide = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCurrentSlideIndex((prev) => (prev + 1) % slides.length);
+  };
+
+  // Auto-advance carousel every 5.5 seconds (paused on hover, modal open, or when video is playing)
+  useEffect(() => {
+    if (isHovered || isImageModalOpen || isCurrentVideo || slides.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentSlideIndex((prevIndex) => (prevIndex + 1) % slides.length);
+    }, 5500);
+
+    return () => clearInterval(timer);
+  }, [isHovered, isImageModalOpen, isCurrentVideo, slides.length]);
 
   // Close modal on Escape key and enable Arrow key navigation
   useEffect(() => {
@@ -145,42 +145,86 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
         <div className="bg-gradient-to-r from-amber-100/95 via-orange-50/95 to-amber-50 rounded-3xl p-6 sm:p-8 md:p-10 border-2 border-amber-300 shadow-xl overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             
-            {/* Small Size Decoration Carousel Card */}
+            {/* Small Size Decoration Carousel Card / Inline Auto-Play Media Card */}
             <div className="md:col-span-5 flex flex-col items-center">
               <div 
-                onClick={() => setIsImageModalOpen(true)}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="relative w-full group cursor-pointer select-none"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setIsImageModalOpen(true);
-                  }
-                }}
-                title={isCurrentVideo ? "व्हिडिओ पाहण्यासाठी क्लिक करा / Click to play video in popup" : "फोटो मोठा करून पाहण्यासाठी क्लिक करा / Click to view full photo in popup"}
+                className="relative w-full group select-none"
               >
                 <div className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-lg border-2 border-amber-400 bg-slate-950">
-                  <img 
-                    src={currentSlide.imageUrl || '/photos/memories_2025_idol.jpeg'} 
-                    alt={currentSlide.title} 
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
-                    }}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25"></div>
+                  {/* Inline Auto-Executing Media: YouTube */}
+                  {currentSlide.mediaType === 'youtube' ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${currentSlide.youtubeId || ''}?autoplay=1&mute=1&loop=1&playlist=${currentSlide.youtubeId || ''}&controls=1&modestbranding=1&playsinline=1&rel=0`}
+                      title={currentSlide.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full border-0 absolute inset-0 z-0"
+                    />
+                  ) : currentSlide.mediaType === 'drive-video' ? (
+                    /* Inline Auto-Executing Media: Google Drive Preview */
+                    <iframe
+                      src={currentSlide.embedUrl || `https://drive.google.com/file/d/${currentSlide.driveFileId}/preview`}
+                      title={currentSlide.title}
+                      allow="autoplay; fullscreen"
+                      allowFullScreen
+                      className="w-full h-full border-0 absolute inset-0 z-0"
+                    />
+                  ) : currentSlide.mediaType === 'video' ? (
+                    /* Inline Auto-Executing Media: Direct MP4/WebM */
+                    <video
+                      src={currentSlide.videoUrl || currentSlide.imageUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      className="w-full h-full object-cover absolute inset-0 z-0"
+                    />
+                  ) : (
+                    /* Static Image Slide (Click to Zoom) */
+                    <div 
+                      onClick={() => setIsImageModalOpen(true)}
+                      className="w-full h-full cursor-pointer relative"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setIsImageModalOpen(true);
+                        }
+                      }}
+                      title="फोटो मोठा करून पाहण्यासाठी क्लिक करा / Click to view full photo"
+                    >
+                      <img 
+                        src={currentSlide.imageUrl || '/photos/memories_2025_idol.jpeg'} 
+                        alt={currentSlide.title} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
+                        }}
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25"></div>
+
+                      {/* Center Hover Zoom Hint */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
+                        <span className="px-3.5 py-1.5 rounded-full bg-black/80 text-amber-200 text-xs font-bold flex items-center gap-1.5 backdrop-blur-xs border border-amber-300/60 shadow-xl">
+                          <ZoomIn className="w-4 h-4 text-amber-300" />
+                          <span>मोठे करून पहा (Click to View)</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Top Counter Badge & Media Type Indicator */}
-                  <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                  <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
                     {isCurrentVideo ? (
-                      <span className="px-2.5 py-0.5 rounded-full bg-red-900/90 text-amber-200 text-[10px] font-black border border-amber-300/60 backdrop-blur-xs flex items-center gap-1 shadow-sm">
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-950/90 text-amber-200 text-[10px] font-black border border-amber-300/60 backdrop-blur-xs flex items-center gap-1 shadow-sm">
                         <Film className="w-3 h-3 text-amber-300 animate-pulse" />
-                        <span>व्हिडिओ / Video</span>
+                        <span>व्हिडिओ / Video (Auto-Playing)</span>
                       </span>
                     ) : (
                       <span className="px-2.5 py-0.5 rounded-full bg-black/60 text-amber-300 text-[10px] font-black border border-amber-300/40 backdrop-blur-xs flex items-center gap-1">
@@ -188,38 +232,31 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                         <span>मखर आरास</span>
                       </span>
                     )}
-                    {slides.length > 1 && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-bold border border-white/20 backdrop-blur-xs flex items-center gap-1">
-                        <Layers className="w-2.5 h-2.5 text-amber-300" />
-                        <span>{currentSlideIndex + 1} / {slides.length}</span>
-                      </span>
-                    )}
-                  </div>
 
-                  {/* Center Play Button Overlay for Video */}
-                  {isCurrentVideo && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-700/90 text-amber-200 border-2 border-amber-300 flex items-center justify-center shadow-[0_0_25px_rgba(220,38,38,0.7)] group-hover:scale-115 group-hover:bg-red-600 transition-all">
-                        <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-current translate-x-0.5" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Center Hover Zoom / Play Hint */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
-                    <span className="px-3.5 py-1.5 rounded-full bg-black/80 text-amber-200 text-xs font-bold flex items-center gap-1.5 backdrop-blur-xs border border-amber-300/60 shadow-xl">
-                      {isCurrentVideo ? (
-                        <>
-                          <Play className="w-4 h-4 text-amber-300 fill-current" />
-                          <span>व्हिडिओ पहा (Click to Play Video)</span>
-                        </>
-                      ) : (
-                        <>
-                          <ZoomIn className="w-4 h-4 text-amber-300" />
-                          <span>मोठे करून पहा (Click to View)</span>
-                        </>
+                    <div className="flex items-center gap-1.5 pointer-events-auto">
+                      {/* Fullscreen Expand Action for Videos */}
+                      {isCurrentVideo && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsImageModalOpen(true);
+                          }}
+                          className="px-2 py-0.5 rounded-full bg-black/80 hover:bg-black text-amber-300 text-[10px] font-bold border border-amber-300/50 backdrop-blur-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-md"
+                          title="Full Screen / मोठा करून पहा"
+                        >
+                          <Maximize2 className="w-2.5 h-2.5" />
+                          <span>Full Screen</span>
+                        </button>
                       )}
-                    </span>
+
+                      {slides.length > 1 && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-bold border border-white/20 backdrop-blur-xs flex items-center gap-1">
+                          <Layers className="w-2.5 h-2.5 text-amber-300" />
+                          <span>{currentSlideIndex + 1} / {slides.length}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Previous / Next Chevron Buttons */}
@@ -228,41 +265,35 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                       <button
                         type="button"
                         onClick={handlePrevSlide}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-amber-300 border border-white/20 backdrop-blur-xs shadow-md transition-all active:scale-90 z-10 cursor-pointer"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/75 hover:bg-black text-white hover:text-amber-300 border border-white/30 backdrop-blur-xs shadow-md transition-all active:scale-90 z-20 cursor-pointer"
                         aria-label="Previous decoration slide"
-                        title="Previous photo"
+                        title="Previous photo/video"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         type="button"
                         onClick={handleNextSlide}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-amber-300 border border-white/20 backdrop-blur-xs shadow-md transition-all active:scale-90 z-10 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/75 hover:bg-black text-white hover:text-amber-300 border border-white/30 backdrop-blur-xs shadow-md transition-all active:scale-90 z-20 cursor-pointer"
                         aria-label="Next decoration slide"
-                        title="Next photo"
+                        title="Next photo/video"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     </>
                   )}
 
-                  {/* Bottom Title & Action Label */}
-                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wider truncate pr-2">
-                      {currentSlide.title}
-                    </span>
-                    <span className="text-[10px] font-bold text-white/90 bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/20 flex-shrink-0">
-                      {isCurrentVideo ? (
-                        <>
-                          <Play className="w-3 h-3 text-amber-300 fill-current" /> चालवा
-                        </>
-                      ) : (
-                        <>
-                          <ZoomIn className="w-3 h-3 text-amber-300" /> पाहा
-                        </>
-                      )}
-                    </span>
-                  </div>
+                  {/* Bottom Title & Action Label for Images */}
+                  {!isCurrentVideo && (
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
+                      <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wider truncate pr-2">
+                        {currentSlide.title}
+                      </span>
+                      <span className="text-[10px] font-bold text-white/90 bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/20 flex-shrink-0">
+                        <ZoomIn className="w-3 h-3 text-amber-300" /> पाहा
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
