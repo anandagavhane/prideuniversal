@@ -1,17 +1,20 @@
 import React from 'react';
 import { Trophy, Play, ExternalLink, ArrowRight, CheckCircle2, Users } from 'lucide-react';
 import { GOOGLE_NOMINATION_FORM_URL } from '../services/googleSheetsService';
+import { CompetitionWinner } from '../types';
 
 interface CompetitionsSectionProps {
   onOpenVideo: () => void;
   onNavigateToNominations: () => void;
   totalNominations: number;
+  winners?: CompetitionWinner[];
 }
 
 export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
   onOpenVideo,
   onNavigateToNominations,
-  totalNominations
+  totalNominations,
+  winners = []
 }) => {
   const competitionCards = [
     {
@@ -69,6 +72,20 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
       winnerBadge: '🏆 Winner Out'
     }
   ];
+
+  const getCardWinners = (title: string) => {
+    if (!winners || winners.length === 0) return [];
+    const t = title.toLowerCase();
+    return winners.filter(w => {
+      const g = w.gameName.toLowerCase();
+      if (t.includes('dance') && g.includes('dance')) return true;
+      if (t.includes('singing') && g.includes('singing')) return true;
+      if (t.includes('drawing') && g.includes('drawing')) return true;
+      if (t.includes('shloka') && g.includes('shloka')) return true;
+      if ((t.includes('piano') || t.includes('instrumental')) && (g.includes('piano') || g.includes('instrumental'))) return true;
+      return false;
+    });
+  };
 
   return (
     <section 
@@ -245,10 +262,42 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
               </div>
 
               <div className="pt-3 border-t border-amber-100">
-                <div className="flex items-start gap-1.5 text-[11px] text-slate-500 mb-4">
+                <div className="flex items-start gap-1.5 text-[11px] text-slate-500 mb-3">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
                   <span>{card.rules}</span>
                 </div>
+
+                {/* Announced Winners Preview with Names */}
+                {(() => {
+                  const cardWinners = getCardWinners(card.title);
+                  if (cardWinners.length === 0) return null;
+                  return (
+                    <div className="mb-3.5 p-2.5 rounded-xl bg-amber-50/90 border border-amber-300/80 shadow-xs">
+                      <div className="flex items-center justify-between text-[11px] font-black text-amber-950 mb-1.5 pb-1 border-b border-amber-200">
+                        <span className="flex items-center gap-1">
+                          <Trophy className="w-3 h-3 text-amber-600" />
+                          <span>🏆 विजेते (Announced Winners)</span>
+                        </span>
+                        <span className="text-[10px] text-amber-700 font-bold uppercase">{cardWinners.length} Winners</span>
+                      </div>
+                      <div className="space-y-1">
+                        {cardWinners.map((w, wIdx) => {
+                          const medal = w.rank.includes('1') ? '🥇' : w.rank.includes('2') ? '🥈' : '🥉';
+                          return (
+                            <div key={wIdx} className="flex items-center justify-between text-xs bg-white/90 px-2 py-1 rounded-lg border border-amber-200/70">
+                              <span className="font-bold text-red-950 truncate max-w-[140px] sm:max-w-[180px]">
+                                {medal} {w.winnerName}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap ml-1">
+                                {w.wing} • {w.flatNumber}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="flex items-center gap-2">
                   {card.title.includes('Emcee') ? (

@@ -216,8 +216,11 @@ export const WinnersSection: React.FC<WinnersSectionProps> = ({
 
                 {/* Winner Name & Event Details */}
                 <div className="my-2">
+                  <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wide block mb-0.5">
+                    👤 Winner / विजेता
+                  </span>
                   <h3 className="text-xl sm:text-2xl font-black text-red-950 font-festive leading-tight">
-                    {winner.winnerName}
+                    {winner.winnerName || `Participant #${winner.srNo}`}
                   </h3>
 
                   {winner.category && (
@@ -276,3 +279,4 @@ export const WinnersSection: React.FC<WinnersSectionProps> = ({
     </section>
   );
 };
+

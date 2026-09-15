@@ -1335,13 +1335,26 @@ export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL):
     }
 
     const headerRow = rows[0].map(h => h.toLowerCase().trim());
-    const srNoIdx = headerRow.findIndex(h => h.includes('sr') || h.includes('no'));
-    const gameIdx = headerRow.findIndex(h => h.includes('game') || h.includes('event') || h.includes('competition'));
-    const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('group'));
-    const winnerIdx = headerRow.findIndex(h => h.includes('winner') || h.includes('name'));
+    const srNoIdx = headerRow.findIndex(h => h.includes('sr') || (h.includes('no') && !h.includes('flat')));
+    const gameIdx = headerRow.findIndex(h => h.includes('game') || h.includes('event') || h.includes('competition') || h.includes('spardha'));
+    const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('group') || h.includes('age'));
+    
+    // Explicitly target winner person name, NOT 'game name'
+    let winnerIdx = headerRow.findIndex(h => h.includes('winner name') || h.includes('winner_name') || h.includes('participant name') || h.includes('student name'));
+    if (winnerIdx === -1) {
+      winnerIdx = headerRow.findIndex(h => h.includes('winner') && !h.includes('state') && !h.includes('rank') && !h.includes('status') && !h.includes('prize'));
+    }
+    if (winnerIdx === -1) {
+      winnerIdx = headerRow.findIndex(h => !h.includes('game') && !h.includes('event') && h.includes('name'));
+    }
+    // Positional fallback for 4th column (index 3)
+    if (winnerIdx === -1 && headerRow.length >= 4) {
+      winnerIdx = 3;
+    }
+
     const wingIdx = headerRow.findIndex(h => h.includes('wing'));
-    const flatIdx = headerRow.findIndex(h => h.includes('flat'));
-    const rankIdx = headerRow.findIndex(h => h.includes('state') || h.includes('rank') || h.includes('prize') || h.includes('place'));
+    const flatIdx = headerRow.findIndex(h => h.includes('flat') || h.includes('room'));
+    const rankIdx = headerRow.findIndex(h => h.includes('state') || h.includes('rank') || h.includes('prize') || h.includes('place') || h.includes('position'));
 
     const list: CompetitionWinner[] = [];
 
@@ -1352,15 +1365,21 @@ export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL):
       const srNo = srNoIdx !== -1 && row[srNoIdx]
         ? parseInt(row[srNoIdx].replace(/\D/g, ''), 10) || (list.length + 1)
         : (list.length + 1);
-      const gameName = gameIdx !== -1 && row[gameIdx] ? row[gameIdx].trim() : '';
-      const category = catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : '';
-      const winnerName = winnerIdx !== -1 && row[winnerIdx] ? row[winnerIdx].trim() : '';
-      let wing = wingIdx !== -1 && row[wingIdx] ? row[wingIdx].trim() : '';
+      const gameName = gameIdx !== -1 && row[gameIdx] ? row[gameIdx].trim() : (row[1] ? row[1].trim() : '');
+      const category = catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : (row[2] ? row[2].trim() : '');
+      let winnerName = winnerIdx !== -1 && row[winnerIdx] ? row[winnerIdx].trim() : '';
+      
+      // Critical failsafe: if winnerName was mapped to gameName or empty, use column 3
+      if ((!winnerName || winnerName.toLowerCase() === gameName.toLowerCase()) && row[3]) {
+        winnerName = row[3].trim();
+      }
+
+      let wing = wingIdx !== -1 && row[wingIdx] ? row[wingIdx].trim() : (row[4] ? row[4].trim() : '');
       if (wing.toUpperCase() === 'A' || wing.toUpperCase() === 'B') {
         wing = `Wing ${wing.toUpperCase()}`;
       }
-      const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : '';
-      const rank = rankIdx !== -1 && row[rankIdx] ? row[rankIdx].trim() : 'Winner';
+      const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : (row[5] ? row[5].trim() : '');
+      const rank = rankIdx !== -1 && row[rankIdx] ? row[rankIdx].trim() : (row[6] ? row[6].trim() : 'Winner');
 
       if (winnerName) {
         list.push({
@@ -1376,10 +1395,28 @@ export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL):
     }
 
     if (list.length > 0) {
+      try {
+        localStorage.setItem('cached_winners', JSON.stringify(list));
+      } catch {
+        // safe fallback
+      }
       return list;
     }
   } catch (err) {
     console.warn('Error fetching competition winners from Google Sheet:', err);
+  }
+
+  // Fallback to cached winners if valid
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_winners') : null;
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].winnerName && parsed[0].winnerName.toLowerCase() !== parsed[0].gameName?.toLowerCase()) {
+        return parsed;
+      }
+    }
+  } catch {
+    // safe fallback
   }
 
   return FALLBACK_WINNERS;

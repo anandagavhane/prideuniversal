@@ -303,6 +303,7 @@ export function App() {
           onOpenVideo={() => setIsVideoModalOpen(true)}
           onNavigateToNominations={() => handleNavigate('nominations')}
           totalNominations={nominations.totalNominations}
+          winners={winners}
         />
 
         {/* 🏆 Official Festival Competition Winners (Google Sheets Datasource) */}
