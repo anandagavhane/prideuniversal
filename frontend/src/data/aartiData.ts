@@ -5,7 +5,7 @@ export const AARTI_LIST: AartiItem[] = [
   {
     id: 'sukhkarta',
     title: 'Sukhkarta Dukhharta',
-    marathiTitle: '१. 🌺 गणपती आरती (सुखकर्ता दुःखहर्ता)',
+    marathiTitle: 'गणपती आरती (सुखकर्ता दुःखहर्ता)',
     deity: 'श्री गणेश (Lord Ganesha)',
     composer: 'समर्थ रामदास स्वामी (Samarth Ramdas Swami)',
     icon: '🌺',
@@ -96,7 +96,7 @@ export const AARTI_LIST: AartiItem[] = [
   {
     id: 'lavthavati-vikrala',
     title: 'Lavthavati Vikrala',
-    marathiTitle: '२. 🔱 शंकर आरती (लवथवती विक्राळा)',
+    marathiTitle: 'शंकर आरती (लवथवती विक्राळा)',
     deity: 'महादेव शंकर (Lord Shiva)',
     composer: 'समर्थ रामदास स्वामी (Samarth Ramdas Swami)',
     icon: '🔱',
@@ -213,7 +213,7 @@ export const AARTI_LIST: AartiItem[] = [
   {
     id: 'yuge-atthavees',
     title: 'Yuge Atthavees',
-    marathiTitle: '३. 🙏 विठ्ठल आरती (युगे अठ्ठावीस)',
+    marathiTitle: 'विठ्ठल आरती (युगे अठ्ठावीस)',
     deity: 'श्री विठ्ठल पांडुरंग (Lord Vitthal / Pandurang)',
     composer: 'संत नामदेव महाराज (Sant Namdev Maharaj)',
     icon: '🙏',
@@ -356,7 +356,7 @@ export const AARTI_LIST: AartiItem[] = [
   {
     id: 'durge-durghat',
     title: 'Durge Durghat Bhari',
-    marathiTitle: '४. 🌸 देवी आरती (दुर्गे दुर्घट भारी)',
+    marathiTitle: 'देवी आरती (दुर्गे दुर्घट भारी)',
     deity: 'आदिशक्ती दुर्गा / पार्वती (Goddess Durga)',
     composer: 'समर्थ रामदास स्वामी (Samarth Ramdas Swami)',
     icon: '🌸',
@@ -447,7 +447,7 @@ export const AARTI_LIST: AartiItem[] = [
   {
     id: 'trigunatmak-traimurti',
     title: 'Trigunatmak Traimurti',
-    marathiTitle: '५. 🕉️ दत्त आरती (त्रिगुणात्मक त्रैमूर्ती)',
+    marathiTitle: 'दत्त आरती (त्रिगुणात्मक त्रैमूर्ती)',
     deity: 'श्री गुरुदेव दत्त (Lord Dattatreya)',
     composer: 'पारंपरिक (Traditional Datta Sampradaya)',
     icon: '🕉️',
@@ -558,5 +558,131 @@ export const AARTI_LIST: AartiItem[] = [
         ]
       }
     ]
+  },
+
+  // ६. 🙏 प्रार्थना - घालीन लोटांगण
+  {
+    id: 'ghalin-lotangan',
+    title: 'Prarthana (Ghalin Lotangan)',
+    marathiTitle: 'प्रार्थना (घालीन लोटांगण)',
+    deity: 'सर्व देव (All Deities / Lord Ganesha & Narayana)',
+    composer: 'संत नामदेव (Sant Namdev)',
+    icon: '🙏',
+    description: 'Devotional surrender and prarthana recited at the conclusion of Aarti rituals.',
+    stanzas: [
+      {
+        type: 'stanza',
+        marathi: [
+          'घालीन लोटांगण वंदीन चरण । डोळ्यांनी पाहीन रूप तुझे ।',
+          'प्रेमे आलिंगिन आनंदे पूजिन । भावे ओवाळीन म्हणे नामा ॥ १ ॥'
+        ],
+        english: [
+          'Ghaalin lotaangan vandin charan | Dolyanni paahin roop tujhe |',
+          'Preme aalingin aanande poojin | Bhaave ovaalin mhane naama || 1 ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'त्वमेव माता च पिता त्वमेव । त्वमेव बंधुश्च सखा त्वमेव ।',
+          'त्वमेव विद्या द्रविणं त्वमेव । त्वमेव सर्वं मम देवदेव ॥ २ ॥'
+        ],
+        english: [
+          'Twameva mata cha pita twameva | Twameva bandhushcha sakha twameva |',
+          'Twameva vidya dravinam twameva | Twameva sarvam mama devadeva || 2 ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'कायेन वाचा मनसेंद्रियैर्वा । बुद्ध्यात्मना वा प्रकृतिस्वभावात् ।',
+          'करोमि यद्यत् सकलं परस्मै । नारायणायेति समर्पयामि ॥ ३ ॥'
+        ],
+        english: [
+          'Kayena vaacha manasendriyairva | Buddhyatmana va prakritiswabhavaat |',
+          'Karomi yadyat sakalam parasmai | Naaraayanaayeti samarpayaami || 3 ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'हरे राम हरे राम राम राम हरे हरे ।',
+          'हरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे ॥'
+        ],
+        english: [
+          'Hare rama hare rama rama rama hare hare |',
+          'Hare krishna hare krishna krishna krishna hare hare ||'
+        ]
+      }
+    ]
+  },
+
+  // ७. 🌸 मंत्रपुष्पांजली
+  {
+    id: 'mantra-pushpanjali',
+    title: 'Mantra Pushpanjali',
+    marathiTitle: 'मंत्रपुष्पांजली (वेदोक्त प्रार्थना)',
+    deity: 'श्री गणेश व सर्व देव (Vedic Divine Invocation)',
+    composer: 'ऋग्वेद / यजुर्वेद (Vedic Suktas)',
+    icon: '🌸',
+    description: 'Solemn Vedic chanting offering flower petals (Pushpanjali) at the feet of Lord Ganesha.',
+    stanzas: [
+      {
+        type: 'stanza',
+        marathi: [
+          'ॐ यज्ञेन यज्ञमयजन्त देवास्तानि धर्माणि प्रथमान्यासन् ।',
+          'ते ह नाकं महिमान: सचन्त यत्र पूर्वे साध्या: सन्ति देवा: ॥'
+        ],
+        english: [
+          'Om yajnena yajnamayajanta devastaani dharmaani prathamaanyaasan |',
+          'Te ha naakam mahimaanaha sachanta yatra poorve saadhyaaha santi devaaha ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'ॐ राजाधिराजाय प्रसह्यसाहिने नमो वयं वैश्रवणाय कुर्महे ।',
+          'स मे कामान् कामकामाय मह्यम् कामेश्वरो वैश्रवणो ददातु ।',
+          'कुबेराय वैश्रवणाय महाराजाय नम: ॥'
+        ],
+        english: [
+          'Om raajaadhiraajaaya prasahyasahine namo vayam vaishravanaaya kurmahe |',
+          'Sa me kaamaan kaamakaamaaya mahyam kaameshwaro vaishravano dadaatu |',
+          'Kuberaaya vaishravanaaya mahaaraajaaya namaha ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'ॐ स्वस्ति साम्राज्यं भौज्यं स्वाराज्यं वैराज्यं पारमेष्ठ्यं राज्यं माहाराज्यमाधिपत्यमयं समन्तपर्यायी स्यात् सार्वभौम: सार्वायुष आन्तादापरार्धात् पृथिव्यै समुद्रपर्यन्ताया एकराळिति ॥'
+        ],
+        english: [
+          'Om swasti saamraajyam bhaujyam swaaraajyam vairaajyam paarameshthyam raajyam maahaaraajyamaadhipatyamayam samantaparyaayi syaat saarvabhaumaha saarvaayusha aantaadaaparaardhaat prithivyai samudraparyantaayaa ekaraaliti ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'तदप्येष श्लोकोऽभिगीतो मरुत: परिवेष्टारो मरुत्तस्यावसन्गृहे ।',
+          'आविक्षितस्य कामप्रेर्विश्वेदेवा: सभासद इति ॥'
+        ],
+        english: [
+          'Tadapyesha shloko-bhigeeto marutaha pariveshtaaro maruttasyaavasangrihe |',
+          'Aavikshitasya kaamaprervishwedevaaha sabhaasada iti ||'
+        ]
+      },
+      {
+        type: 'chorus',
+        marathi: [
+          '॥ एकदंताय विद्महे वक्रतुंडाय धीमहि तन्नो दंती प्रचोदयात् ॥',
+          '॥ गणपती बाप्पा मोरया, पुढच्या वर्षी लवकर या! ॥'
+        ],
+        english: [
+          '|| Ekadantaya vidmahe vakratundaya dheemahi tanno danti prachodayat ||',
+          '|| Ganapati Bappa Morya, Pudhchya Varshi Lavkar Ya! ||'
+        ]
+      }
+    ]
   }
 ];
+

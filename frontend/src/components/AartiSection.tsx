@@ -233,6 +233,11 @@ export const AartiSection: React.FC = () => {
             <div className="flex items-center gap-2 min-w-max pb-1 sm:pb-0">
               {AARTI_LIST.map((aarti, idx) => {
                 const isSelected = aarti.id === selectedAartiId;
+                const tabTitle = aarti.marathiTitle
+                  .replace(/^[०-९0-9.\s]+/, '')
+                  .replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u, '')
+                  .split('(')[0]
+                  .trim();
                 return (
                   <button
                     key={aarti.id}
@@ -244,7 +249,7 @@ export const AartiSection: React.FC = () => {
                     }`}
                   >
                     <span className="text-base leading-none">{aarti.icon}</span>
-                    <span className="font-marathi font-bold">{idx + 1}. {aarti.marathiTitle.split('(')[0].trim()}</span>
+                    <span className="font-marathi font-bold">{idx + 1}. {tabTitle}</span>
                   </button>
                 );
               })}
@@ -359,10 +364,10 @@ export const AartiSection: React.FC = () => {
             {/* Sacred Bottom Chanting Chorus Bar */}
             <div className="mt-8 pt-6 border-t-2 border-amber-200/80">
               <div className="inline-block bg-gradient-to-r from-red-800 via-festival-saffron to-red-900 text-white font-marathi font-black text-lg sm:text-2xl px-6 py-3 rounded-2xl shadow-lg border-2 border-amber-300">
-                ॥ गणपती बाप्पा मोरया, पुढच्या वर्षी लवकर या! ॥
+                ॥ गणपती बाप्पा मोरया,  मंगलमूर्ती मोरया ॥
               </div>
               <p className="text-xs text-slate-500 mt-2 font-medium">
-                ॥ मंगलमूर्ती मोरया • सुखकर्ता दुःखहर्ता प्रसन्न ॥
+                ॥ सुखकर्ता दुःखहर्ता प्रसन्न ॥
               </p>
             </div>
           </div>
