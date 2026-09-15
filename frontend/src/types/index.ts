@@ -10,6 +10,14 @@ export interface EventItem {
   highlight?: boolean;
 }
 
+export interface SelectedEmcee {
+  srNo: number;
+  name: string;
+  wing: string;
+  flatNumber: string;
+  status: string;
+}
+
 export interface NominationCategoryStat {
   category: string;
   nominations: number;

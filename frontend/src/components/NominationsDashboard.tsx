@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trophy, RefreshCw, ExternalLink, BarChart3, PieChart as PieChartIcon, Sparkles, Users } from 'lucide-react';
-import { NominationsDashboardData } from '../types';
+import { NominationsDashboardData, SelectedEmcee } from '../types';
+import { SelectedEmceesSection } from './SelectedEmceesSection';
 import { 
   BarChart, 
   Bar, 
@@ -20,13 +21,17 @@ interface NominationsDashboardProps {
   onRefresh: () => void;
   isRefreshing: boolean;
   syncCountdown?: number;
+  selectedEmcees?: SelectedEmcee[];
+  emceesLastUpdated?: string;
 }
 
 export const NominationsDashboard: React.FC<NominationsDashboardProps> = ({
   data,
   onRefresh,
   isRefreshing,
-  syncCountdown
+  syncCountdown,
+  selectedEmcees,
+  emceesLastUpdated
 }) => {
   // Chart colors
   const WING_COLORS = ['#d97706', '#dc2626']; // Amber & Red
@@ -329,6 +334,16 @@ export const NominationsDashboard: React.FC<NominationsDashboardProps> = ({
             </table>
           </div>
         </div>
+
+        {/* 🎙️ Official Selected Emcees Showcase (Live from Google Sheet) */}
+        {selectedEmcees && selectedEmcees.length > 0 && (
+          <SelectedEmceesSection 
+            emcees={selectedEmcees}
+            isLoading={isRefreshing}
+            onRefresh={onRefresh}
+            lastUpdated={emceesLastUpdated}
+          />
+        )}
 
         {/* 🌟 Event Coordinators & Incharge Spotlight */}
         <div className="mt-8 bg-gradient-to-r from-amber-100/90 via-orange-50/90 to-amber-50 rounded-2xl p-6 sm:p-7 border-2 border-amber-300 shadow-md">

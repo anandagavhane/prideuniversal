@@ -1,5 +1,5 @@
 import { FESTIVAL_SCHEDULE, COMMITTEE_DATA, GALLERY_PHOTOS } from '../data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee } from '../types';
 
 export interface SearchResultItem {
   id: string;
@@ -17,13 +17,13 @@ export interface SearchResultItem {
 
 export const QUICK_SEARCH_TAGS = [
   { label: '🪔 Daily Aarti / महाआरती', query: 'aarti' },
+  { label: '🎙️ Selected Emcees / सूत्रसंचालक', query: 'emcee' },
   { label: '💃 Dance / नृत्य स्पर्धा', query: 'dance' },
   { label: '🍽️ Satyanarayan & Mahaprasad', query: 'mahaprasad' },
   { label: '💰 Accounts / जमा-खर्च', query: 'accounts' },
   { label: '📅 12-Day Schedule', query: 'schedule' },
   { label: '🤝 Committee Contacts', query: 'committee' },
-  { label: '🎨 Drawing Competition', query: 'drawing' },
-  { label: '🎤 Singing Competition', query: 'singing' }
+  { label: '🎨 Drawing Competition', query: 'drawing' }
 ];
 
 /**
@@ -33,7 +33,8 @@ export function buildSearchIndex(
   accounts?: AccountsData | null,
   notifications?: NotificationItem[] | null,
   nominations?: NominationsDashboardData | null,
-  schedule?: EventItem[] | null
+  schedule?: EventItem[] | null,
+  selectedEmcees?: SelectedEmcee[] | null
 ): SearchResultItem[] {
   const items: SearchResultItem[] = [];
 
@@ -182,6 +183,32 @@ export function buildSearchIndex(
       ]
     });
   });
+
+  // 3b. SELECTED EMCEES (OFFICIAL HOSTS)
+  if (selectedEmcees && selectedEmcees.length > 0) {
+    selectedEmcees.forEach(e => {
+      items.push({
+        id: `emcee_${e.srNo}`,
+        title: `🎙️ ${e.name} (Selected Emcee / सूत्रसंचालक)`,
+        marathiTitle: `${e.name} - अधिकृत सूत्रसंचालक`,
+        description: `Official festival host representing Wing ${e.wing} - Flat ${e.flatNumber}. Congratulations!`,
+        category: 'Competition',
+        categoryLabel: 'निवडलेले सूत्रसंचालक',
+        categoryColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        sectionId: 'selected-emcees',
+        icon: '🎙️',
+        timeOrDate: `Wing ${e.wing} - Flat ${e.flatNumber}`,
+        keywords: [
+          'emcee', 'host', 'anchor', 'sutrasanchalan', 'selected',
+          e.name.toLowerCase(),
+          `wing ${e.wing.toLowerCase()}`,
+          e.flatNumber,
+          `${e.wing.toLowerCase()}-${e.flatNumber}`,
+          'सूत्रसंचालक', 'निवेदक', 'निवड'
+        ]
+      });
+    });
+  }
 
   // 4. FINANCIAL ACCOUNTS & EXPENSES
   const colFmt = accounts?.totalCollectionsFormatted || '₹5,100';

@@ -1,5 +1,5 @@
-import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem } from '../types';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS } from '../data/fallbackData';
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem, SelectedEmcee } from '../types';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES } from '../data/fallbackData';
 import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { SPONSORS_CSV_URL } from './adService';
 
@@ -16,6 +16,10 @@ export const NOTIFICATIONS_CSV_URL =
 // Published CSV URL for Event Schedules Tab
 export const SCHEDULE_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=2029319196&single=true&output=csv';
+
+// Published CSV URL for Selected Emcees Tab
+export const SELECTED_EMCEES_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=903570614&single=true&output=csv';
 
 export const GOOGLE_NOMINATION_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
@@ -1247,5 +1251,69 @@ export async function fetchFestivalSchedule(csvUrl: string = SCHEDULE_CSV_URL): 
 
   return FESTIVAL_SCHEDULE;
 }
+
+/**
+ * Fetch and parse Selected Emcees list from Google Sheets
+ * Shows ONLY participants where 'Selected or Not' equals 'Selected'
+ */
+export async function fetchSelectedEmcees(csvUrl: string = SELECTED_EMCEES_CSV_URL): Promise<SelectedEmcee[]> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    if (rows.length <= 1) {
+      return FALLBACK_SELECTED_EMCEES;
+    }
+
+    const headerRow = rows[0].map(h => h.toLowerCase().trim());
+    const srNoIdx = headerRow.findIndex(h => h.includes('sr') || h.includes('no'));
+    const nameIdx = headerRow.findIndex(h => h.includes('name'));
+    const wingIdx = headerRow.findIndex(h => h.includes('wing'));
+    const flatIdx = headerRow.findIndex(h => h.includes('flat'));
+    const statusIdx = headerRow.findIndex(h => h.includes('selected') || h.includes('status'));
+
+    const list: SelectedEmcee[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length < 2 || row.every(c => !c || c.trim() === '')) continue;
+
+      const rawStatus = statusIdx !== -1 && row[statusIdx] ? row[statusIdx].trim() : '';
+      // Strict filter: ONLY show selected emcees
+      if (!/^selected$/i.test(rawStatus.trim())) {
+        continue;
+      }
+
+      const srNo = srNoIdx !== -1 && row[srNoIdx]
+        ? parseInt(row[srNoIdx].replace(/\D/g, ''), 10) || (list.length + 1)
+        : (list.length + 1);
+      const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx].trim() : '';
+      const wing = wingIdx !== -1 && row[wingIdx] ? row[wingIdx].trim().toUpperCase() : '';
+      const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : '';
+
+      if (name) {
+        list.push({
+          srNo,
+          name,
+          wing,
+          flatNumber,
+          status: 'Selected'
+        });
+      }
+    }
+
+    if (list.length > 0) {
+      return list;
+    }
+  } catch (err) {
+    console.warn('Error fetching selected emcees from Google Sheet:', err);
+  }
+
+  return FALLBACK_SELECTED_EMCEES;
+}
+
 
 

@@ -49,7 +49,8 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
       title: '⭐ Emcee / Host',
       marathi: 'निवेदन व सूत्रसंचालन',
       desc: 'Anchor festival events, cultural nights, and games as the voice of Pride Universal.',
-      rules: 'Marathi & Hindi bilingual hosting skills.'
+      rules: 'Marathi & Hindi bilingual hosting skills.',
+      selectedBadge: '✨ 6 Hosts Selected'
     },
     {
       title: '🎹 Piano / Instrumental',
@@ -208,12 +209,19 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xl font-bold text-red-950 font-festive">
-                    {card.title}
+                  <h3 className="text-xl font-bold text-red-950 font-festive flex items-center gap-1.5">
+                    <span>{card.title}</span>
                   </h3>
-                  <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded font-marathi">
-                    {card.marathi}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {card.selectedBadge && (
+                      <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full shadow-xs">
+                        {card.selectedBadge}
+                      </span>
+                    )}
+                    <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded font-marathi">
+                      {card.marathi}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-xs text-slate-600 mb-4 leading-relaxed">
@@ -228,14 +236,28 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <a
-                    href={GOOGLE_NOMINATION_FORM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 transition-colors"
-                  >
-                    Nominate Now
-                  </a>
+                  {card.title.includes('Emcee') ? (
+                    <a
+                      href="#selected-emcees"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.getElementById('selected-emcees');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-red-800 to-festival-saffron text-white shadow hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span>🎙️ View Selected Emcees</span>
+                    </a>
+                  ) : (
+                    <a
+                      href={GOOGLE_NOMINATION_FORM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 transition-colors"
+                    >
+                      Nominate Now
+                    </a>
+                  )}
                   {card.hasVideo && (
                     <button
                       onClick={onOpenVideo}

@@ -1,4 +1,4 @@
-import { AccountsData, NominationsDashboardData, NotificationItem } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, SelectedEmcee } from '../types';
 
 export const FALLBACK_NOTIFICATIONS: NotificationItem[] = [
   {
@@ -84,4 +84,14 @@ export const FALLBACK_NOMINATIONS_DATA: NominationsDashboardData = {
   lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   isLive: false
 };
+
+export const FALLBACK_SELECTED_EMCEES: SelectedEmcee[] = [
+  { srNo: 1, name: 'Shivam Babar', wing: 'A', flatNumber: '304', status: 'Selected' },
+  { srNo: 2, name: 'Dhruvu Garade', wing: 'A', flatNumber: '502', status: 'Selected' },
+  { srNo: 3, name: 'Sujal Rajbhoj', wing: 'B', flatNumber: '405', status: 'Selected' },
+  { srNo: 6, name: 'Arohi Kaldate', wing: 'B', flatNumber: '1006', status: 'Selected' },
+  { srNo: 7, name: 'Arohi Kashid', wing: 'A', flatNumber: '102', status: 'Selected' },
+  { srNo: 9, name: 'Ayush Pawar', wing: 'B', flatNumber: '102', status: 'Selected' }
+];
+
 

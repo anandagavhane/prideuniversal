@@ -25,6 +25,7 @@ import {
   fetchNotificationsData,
   fetchTempleDecorationSlides,
   fetchFestivalSchedule,
+  fetchSelectedEmcees,
   DecorationSlide,
   DEFAULT_DECORATION_SLIDES
 } from './services/googleSheetsService';
@@ -33,9 +34,9 @@ import {
   initializeNotificationChannels,
   requestAllNotificationPermissions
 } from './services/nativeNotificationService';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS } from './data/fallbackData';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES } from './data/fallbackData';
 import { FESTIVAL_SCHEDULE } from './data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem } from './types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee } from './types';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -44,6 +45,8 @@ export function App() {
   const [notifications, setNotifications] = useState<NotificationItem[]>(FALLBACK_NOTIFICATIONS);
   const [schedule, setSchedule] = useState<EventItem[]>(FESTIVAL_SCHEDULE);
   const [scheduleLastUpdated, setScheduleLastUpdated] = useState<string>('');
+  const [selectedEmcees, setSelectedEmcees] = useState<SelectedEmcee[]>(FALLBACK_SELECTED_EMCEES);
+  const [emceesLastUpdated, setEmceesLastUpdated] = useState<string>('');
   const [sponsorAds, setSponsorAds] = useState<SponsorAd[]>(DEFAULT_SPONSOR_ADS);
   const [decorationSlides, setDecorationSlides] = useState<DecorationSlide[]>(DEFAULT_DECORATION_SLIDES);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
@@ -76,13 +79,14 @@ export function App() {
   const loadSheetsData = useCallback(async (showLoading = false) => {
     if (showLoading) setIsRefreshing(true);
     try {
-      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes] = await Promise.allSettled([
+      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes, emceesRes] = await Promise.allSettled([
         fetchAccountsData(),
         fetchNominationsData(),
         fetchNotificationsData(),
         fetchSponsorAds(),
         fetchTempleDecorationSlides(),
-        fetchFestivalSchedule()
+        fetchFestivalSchedule(),
+        fetchSelectedEmcees()
       ]);
 
       if (accRes.status === 'fulfilled') setAccounts(accRes.value);
@@ -112,6 +116,10 @@ export function App() {
       if (schedRes.status === 'fulfilled' && schedRes.value && schedRes.value.length > 0) {
         setSchedule(schedRes.value);
         setScheduleLastUpdated(timeStr);
+      }
+      if (emceesRes.status === 'fulfilled' && emceesRes.value && emceesRes.value.length > 0) {
+        setSelectedEmcees(emceesRes.value);
+        setEmceesLastUpdated(timeStr);
       }
       setLastSyncNotice(`Live data updated at ${timeStr}`);
       setTimeout(() => setLastSyncNotice(''), 3500);
@@ -294,6 +302,8 @@ export function App() {
           onRefresh={() => loadSheetsData(true)}
           isRefreshing={isRefreshing}
           syncCountdown={autoSyncEnabled ? syncCountdown : undefined}
+          selectedEmcees={selectedEmcees}
+          emceesLastUpdated={emceesLastUpdated}
         />
 
         {/* Accounts & Finance Overview (Google Sheets Datasource) */}
@@ -346,6 +356,7 @@ export function App() {
         notifications={notifications}
         nominations={nominations}
         schedule={schedule}
+        selectedEmcees={selectedEmcees}
         onNavigateSection={handleNavigate}
       />
 
