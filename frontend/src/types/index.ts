@@ -18,6 +18,16 @@ export interface SelectedEmcee {
   status: string;
 }
 
+export interface CompetitionWinner {
+  srNo: number;
+  gameName: string;
+  category: string;
+  winnerName: string;
+  wing: string;
+  flatNumber: string;
+  rank: string; // '1st', '2nd', '3rd'
+}
+
 export interface NominationCategoryStat {
   category: string;
   nominations: number;

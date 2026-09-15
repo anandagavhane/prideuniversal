@@ -1,5 +1,5 @@
-import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem, SelectedEmcee } from '../types';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES } from '../data/fallbackData';
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS } from '../data/fallbackData';
 import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { SPONSORS_CSV_URL } from './adService';
 
@@ -20,6 +20,10 @@ export const SCHEDULE_CSV_URL =
 // Published CSV URL for Selected Emcees Tab
 export const SELECTED_EMCEES_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=903570614&single=true&output=csv';
+
+// Published CSV URL for Competition Winners Tab
+export const WINNERS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=1253355035&single=true&output=csv';
 
 export const GOOGLE_NOMINATION_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
@@ -1314,6 +1318,73 @@ export async function fetchSelectedEmcees(csvUrl: string = SELECTED_EMCEES_CSV_U
 
   return FALLBACK_SELECTED_EMCEES;
 }
+
+/**
+ * Fetch and parse Competition Winners list from Google Sheets
+ */
+export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL): Promise<CompetitionWinner[]> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    if (rows.length <= 1) {
+      return FALLBACK_WINNERS;
+    }
+
+    const headerRow = rows[0].map(h => h.toLowerCase().trim());
+    const srNoIdx = headerRow.findIndex(h => h.includes('sr') || h.includes('no'));
+    const gameIdx = headerRow.findIndex(h => h.includes('game') || h.includes('event') || h.includes('competition'));
+    const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('group'));
+    const winnerIdx = headerRow.findIndex(h => h.includes('winner') || h.includes('name'));
+    const wingIdx = headerRow.findIndex(h => h.includes('wing'));
+    const flatIdx = headerRow.findIndex(h => h.includes('flat'));
+    const rankIdx = headerRow.findIndex(h => h.includes('state') || h.includes('rank') || h.includes('prize') || h.includes('place'));
+
+    const list: CompetitionWinner[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length < 2 || row.every(c => !c || c.trim() === '')) continue;
+
+      const srNo = srNoIdx !== -1 && row[srNoIdx]
+        ? parseInt(row[srNoIdx].replace(/\D/g, ''), 10) || (list.length + 1)
+        : (list.length + 1);
+      const gameName = gameIdx !== -1 && row[gameIdx] ? row[gameIdx].trim() : '';
+      const category = catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : '';
+      const winnerName = winnerIdx !== -1 && row[winnerIdx] ? row[winnerIdx].trim() : '';
+      let wing = wingIdx !== -1 && row[wingIdx] ? row[wingIdx].trim() : '';
+      if (wing.toUpperCase() === 'A' || wing.toUpperCase() === 'B') {
+        wing = `Wing ${wing.toUpperCase()}`;
+      }
+      const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : '';
+      const rank = rankIdx !== -1 && row[rankIdx] ? row[rankIdx].trim() : 'Winner';
+
+      if (winnerName) {
+        list.push({
+          srNo,
+          gameName,
+          category,
+          winnerName,
+          wing,
+          flatNumber,
+          rank
+        });
+      }
+    }
+
+    if (list.length > 0) {
+      return list;
+    }
+  } catch (err) {
+    console.warn('Error fetching competition winners from Google Sheet:', err);
+  }
+
+  return FALLBACK_WINNERS;
+}
+
 
 
 

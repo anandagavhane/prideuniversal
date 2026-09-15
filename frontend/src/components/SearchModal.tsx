@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, ArrowRight, CornerDownLeft, Sparkles, Clock, Calendar, Phone, Trophy, DollarSign } from 'lucide-react';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
 import { buildSearchIndex, searchFestivalIndex, QUICK_SEARCH_TAGS, SearchResultItem } from '../services/searchService';
 
 interface SearchModalProps {
@@ -11,6 +11,7 @@ interface SearchModalProps {
   nominations?: NominationsDashboardData | null;
   schedule?: EventItem[] | null;
   selectedEmcees?: SelectedEmcee[] | null;
+  winners?: CompetitionWinner[] | null;
   onNavigateSection: (sectionId: string) => void;
 }
 
@@ -22,6 +23,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   nominations,
   schedule,
   selectedEmcees,
+  winners,
   onNavigateSection
 }) => {
   const [query, setQuery] = useState('');
@@ -31,8 +33,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   // Build unified search index memoized with dynamic sheets data
   const searchIndex = useMemo(() => {
-    return buildSearchIndex(accounts, notifications, nominations, schedule, selectedEmcees);
-  }, [accounts, notifications, nominations, schedule, selectedEmcees]);
+    return buildSearchIndex(accounts, notifications, nominations, schedule, selectedEmcees, winners);
+  }, [accounts, notifications, nominations, schedule, selectedEmcees, winners]);
 
   // Compute matched results
   const results = useMemo(() => {

@@ -1,4 +1,4 @@
-import { AccountsData, NominationsDashboardData, NotificationItem, SelectedEmcee } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, SelectedEmcee, CompetitionWinner } from '../types';
 
 export const FALLBACK_NOTIFICATIONS: NotificationItem[] = [
   {
@@ -93,5 +93,19 @@ export const FALLBACK_SELECTED_EMCEES: SelectedEmcee[] = [
   { srNo: 7, name: 'Arohi Kashid', wing: 'A', flatNumber: '102', status: 'Selected' },
   { srNo: 9, name: 'Ayush Pawar', wing: 'B', flatNumber: '102', status: 'Selected' }
 ];
+
+export const FALLBACK_WINNERS: CompetitionWinner[] = [
+  { srNo: 1, gameName: 'Drawing', category: 'Junior (Under 10)', winnerName: 'Shivam Babar', wing: 'Wing A', flatNumber: '304', rank: '1st' },
+  { srNo: 2, gameName: 'Drawing', category: 'Junior (Under 10)', winnerName: 'Dhruvu Garade', wing: 'Wing A', flatNumber: '502', rank: '2nd' },
+  { srNo: 3, gameName: 'Drawing', category: 'Junior (Under 10)', winnerName: 'Sujal Rajbhoj', wing: 'Wing B', flatNumber: '405', rank: '3rd' },
+  { srNo: 4, gameName: 'Dance', category: 'Solo Freestyle', winnerName: 'Divyanka Chaudhari', wing: 'Wing B', flatNumber: '706', rank: '1st' },
+  { srNo: 5, gameName: 'Dance', category: 'Solo Freestyle', winnerName: 'Adhira Wani', wing: 'Wing A', flatNumber: '202', rank: '2nd' },
+  { srNo: 6, gameName: 'Dance', category: 'Solo Freestyle', winnerName: 'Arohi Kaldate', wing: 'Wing B', flatNumber: '1006', rank: '3rd' },
+  { srNo: 7, gameName: 'Singing', category: 'Classical Vocal', winnerName: 'Arohi Kashid', wing: 'Wing A', flatNumber: '102', rank: '1st' },
+  { srNo: 8, gameName: 'Singing', category: 'Classical Vocal', winnerName: 'Keya Torane', wing: 'Wing A', flatNumber: '1004', rank: '2nd' },
+  { srNo: 9, gameName: 'Shloka', category: 'Kids Recitation', winnerName: 'Ayush Pawar', wing: 'Wing B', flatNumber: '102', rank: '1st' },
+  { srNo: 10, gameName: 'Piano Play', category: 'Open Instrumental', winnerName: 'Tanvi Deshmukh', wing: 'Wing A', flatNumber: '801', rank: '1st' }
+];
+
 
 

@@ -1,5 +1,5 @@
 import { FESTIVAL_SCHEDULE, COMMITTEE_DATA, GALLERY_PHOTOS } from '../data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
 
 export interface SearchResultItem {
   id: string;
@@ -16,13 +16,13 @@ export interface SearchResultItem {
 }
 
 export const QUICK_SEARCH_TAGS = [
+  { label: '🏆 Winners / विजेते', query: 'winner' },
   { label: '🪔 Daily Aarti / महाआरती', query: 'aarti' },
-  { label: '🎙️ Selected Emcees / सूत्रसंचालक', query: 'emcee' },
+  { label: '🎙️ Selected Emcees', query: 'emcee' },
   { label: '💃 Dance / नृत्य स्पर्धा', query: 'dance' },
   { label: '🍽️ Satyanarayan & Mahaprasad', query: 'mahaprasad' },
   { label: '💰 Accounts / जमा-खर्च', query: 'accounts' },
   { label: '📅 12-Day Schedule', query: 'schedule' },
-  { label: '🤝 Committee Contacts', query: 'committee' },
   { label: '🎨 Drawing Competition', query: 'drawing' }
 ];
 
@@ -34,7 +34,8 @@ export function buildSearchIndex(
   notifications?: NotificationItem[] | null,
   nominations?: NominationsDashboardData | null,
   schedule?: EventItem[] | null,
-  selectedEmcees?: SelectedEmcee[] | null
+  selectedEmcees?: SelectedEmcee[] | null,
+  winners?: CompetitionWinner[] | null
 ): SearchResultItem[] {
   const items: SearchResultItem[] = [];
 
@@ -205,6 +206,34 @@ export function buildSearchIndex(
           e.flatNumber,
           `${e.wing.toLowerCase()}-${e.flatNumber}`,
           'सूत्रसंचालक', 'निवेदक', 'निवड'
+        ]
+      });
+    });
+  }
+
+  // 3c. COMPETITION WINNERS (CHAMPIONS)
+  if (winners && winners.length > 0) {
+    winners.forEach(w => {
+      items.push({
+        id: `winner_${w.srNo}_${w.gameName}`,
+        title: `🏆 ${w.winnerName} (${w.rank} Prize - ${w.gameName})`,
+        marathiTitle: `${w.winnerName} - ${w.rank} क्रमांक (${w.gameName})`,
+        description: `${w.gameName} (${w.category}) ${w.rank} Place Winner from ${w.wing} - Flat ${w.flatNumber}. Congratulations!`,
+        category: 'Competition',
+        categoryLabel: 'स्पर्धा विजेते',
+        categoryColor: 'bg-yellow-100 text-yellow-950 border-amber-400',
+        sectionId: 'winners',
+        icon: '🏆',
+        timeOrDate: `${w.wing} - Flat ${w.flatNumber}`,
+        keywords: [
+          'winner', 'champion', 'prize', 'first', 'second', 'third', '1st', '2nd', '3rd',
+          w.winnerName.toLowerCase(),
+          w.gameName.toLowerCase(),
+          w.category.toLowerCase(),
+          w.wing.toLowerCase(),
+          w.flatNumber,
+          `${w.wing.toLowerCase()}-${w.flatNumber}`,
+          'विजेता', 'विजेते', 'पारितोषिक', 'क्रमांक', 'प्रथम', 'द्वितीय', 'तृतीय'
         ]
       });
     });

@@ -171,3 +171,4 @@ export const SelectedEmceesSection: React.FC<SelectedEmceesSectionProps> = ({
     </div>
   );
 };
+

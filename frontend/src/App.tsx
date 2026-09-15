@@ -4,6 +4,7 @@ import { FlashNoteBanner } from './components/FlashNoteBanner';
 import { Hero } from './components/Hero';
 import { ScheduleSection } from './components/ScheduleSection';
 import { CompetitionsSection } from './components/CompetitionsSection';
+import { WinnersSection } from './components/WinnersSection';
 import { NominationsDashboard } from './components/NominationsDashboard';
 import { AccountsSection } from './components/AccountsSection';
 import { AartiSection } from './components/AartiSection';
@@ -26,6 +27,7 @@ import {
   fetchTempleDecorationSlides,
   fetchFestivalSchedule,
   fetchSelectedEmcees,
+  fetchCompetitionWinners,
   DecorationSlide,
   DEFAULT_DECORATION_SLIDES
 } from './services/googleSheetsService';
@@ -34,9 +36,9 @@ import {
   initializeNotificationChannels,
   requestAllNotificationPermissions
 } from './services/nativeNotificationService';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES } from './data/fallbackData';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS } from './data/fallbackData';
 import { FESTIVAL_SCHEDULE } from './data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee } from './types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from './types';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -47,6 +49,8 @@ export function App() {
   const [scheduleLastUpdated, setScheduleLastUpdated] = useState<string>('');
   const [selectedEmcees, setSelectedEmcees] = useState<SelectedEmcee[]>(FALLBACK_SELECTED_EMCEES);
   const [emceesLastUpdated, setEmceesLastUpdated] = useState<string>('');
+  const [winners, setWinners] = useState<CompetitionWinner[]>(FALLBACK_WINNERS);
+  const [winnersLastUpdated, setWinnersLastUpdated] = useState<string>('');
   const [sponsorAds, setSponsorAds] = useState<SponsorAd[]>(DEFAULT_SPONSOR_ADS);
   const [decorationSlides, setDecorationSlides] = useState<DecorationSlide[]>(DEFAULT_DECORATION_SLIDES);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
@@ -79,14 +83,15 @@ export function App() {
   const loadSheetsData = useCallback(async (showLoading = false) => {
     if (showLoading) setIsRefreshing(true);
     try {
-      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes, emceesRes] = await Promise.allSettled([
+      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes, emceesRes, winnersRes] = await Promise.allSettled([
         fetchAccountsData(),
         fetchNominationsData(),
         fetchNotificationsData(),
         fetchSponsorAds(),
         fetchTempleDecorationSlides(),
         fetchFestivalSchedule(),
-        fetchSelectedEmcees()
+        fetchSelectedEmcees(),
+        fetchCompetitionWinners()
       ]);
 
       if (accRes.status === 'fulfilled') setAccounts(accRes.value);
@@ -120,6 +125,10 @@ export function App() {
       if (emceesRes.status === 'fulfilled' && emceesRes.value && emceesRes.value.length > 0) {
         setSelectedEmcees(emceesRes.value);
         setEmceesLastUpdated(timeStr);
+      }
+      if (winnersRes.status === 'fulfilled' && winnersRes.value && winnersRes.value.length > 0) {
+        setWinners(winnersRes.value);
+        setWinnersLastUpdated(timeStr);
       }
       setLastSyncNotice(`Live data updated at ${timeStr}`);
       setTimeout(() => setLastSyncNotice(''), 3500);
@@ -296,6 +305,14 @@ export function App() {
           totalNominations={nominations.totalNominations}
         />
 
+        {/* 🏆 Official Festival Competition Winners (Google Sheets Datasource) */}
+        <WinnersSection
+          winners={winners}
+          onRefresh={() => loadSheetsData(true)}
+          isLoading={isRefreshing}
+          lastUpdated={winnersLastUpdated}
+        />
+
         {/* Live Nominations Dashboard (Google Sheets Datasource) */}
         <NominationsDashboard
           data={nominations}
@@ -357,6 +374,7 @@ export function App() {
         nominations={nominations}
         schedule={schedule}
         selectedEmcees={selectedEmcees}
+        winners={winners}
         onNavigateSection={handleNavigate}
       />
 

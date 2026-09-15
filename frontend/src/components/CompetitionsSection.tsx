@@ -19,19 +19,25 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
       marathi: 'नृत्य स्पर्धा',
       desc: 'Solo, Duet, and Group performances. Classical, Semi-Classical, Folk & Bollywood.',
       hasVideo: true,
-      rules: 'Duration: 3 to 5 minutes. Submit audio track to committee in advance.'
+      rules: 'Duration: 3 to 5 minutes. Submit audio track to committee in advance.',
+      hasWinners: true,
+      winnerBadge: '🏆 Winners Out'
     },
     {
       title: '🎤 Singing',
       marathi: 'गायन स्पर्धा',
       desc: 'Devotional Abhang, Bhakti Geet, Classical & Light Music singing for kids & adults.',
-      rules: 'Karaoke or live acoustic instruments permitted.'
+      rules: 'Karaoke or live acoustic instruments permitted.',
+      hasWinners: true,
+      winnerBadge: '🏆 Winners Out'
     },
     {
       title: '🎨 Drawing',
       marathi: 'चित्रकला स्पर्धा',
       desc: 'Express creativity with eco-friendly Lord Ganesha and social themes.',
-      rules: 'Drawing paper will be provided. Bring your own colours & pencils.'
+      rules: 'Drawing paper will be provided. Bring your own colours & pencils.',
+      hasWinners: true,
+      winnerBadge: '🏆 Winners Out'
     },
     {
       title: '🎭 Drama',
@@ -43,7 +49,9 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
       title: '📖 Shloka',
       marathi: 'श्लोक व स्तोत्र पठण',
       desc: 'Ganesh Atharvashirsha, Ramraksha, and Sanskrit shloka chanting with correct pronunciation.',
-      rules: 'Age categories: Below 10 yrs, 10-18 yrs, and Adults.'
+      rules: 'Age categories: Below 10 yrs, 10-18 yrs, and Adults.',
+      hasWinners: true,
+      winnerBadge: '🏆 Winner Out'
     },
     {
       title: '⭐ Emcee / Host',
@@ -56,7 +64,9 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
       title: '🎹 Piano / Instrumental',
       marathi: 'वाद्य संगीत',
       desc: 'Keyboard, harmonium, flute, violin, or acoustic solo instrumental showcase.',
-      rules: 'Original compositions or devotional bhajans welcome.'
+      rules: 'Original compositions or devotional bhajans welcome.',
+      hasWinners: true,
+      winnerBadge: '🏆 Winner Out'
     }
   ];
 
@@ -212,10 +222,15 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
                   <h3 className="text-xl font-bold text-red-950 font-festive flex items-center gap-1.5">
                     <span>{card.title}</span>
                   </h3>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
                     {card.selectedBadge && (
                       <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full shadow-xs">
                         {card.selectedBadge}
+                      </span>
+                    )}
+                    {card.winnerBadge && (
+                      <span className="text-[10px] font-extrabold text-amber-950 bg-gradient-to-r from-amber-200 to-yellow-300 border border-amber-400 px-2 py-0.5 rounded-full shadow-xs">
+                        {card.winnerBadge}
                       </span>
                     )}
                     <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded font-marathi">
@@ -247,6 +262,18 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = ({
                       className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-red-800 to-festival-saffron text-white shadow hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
                     >
                       <span>🎙️ View Selected Emcees</span>
+                    </a>
+                  ) : card.hasWinners ? (
+                    <a
+                      href="#winners"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.getElementById('winners');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-white shadow hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span>🏆 View Winners</span>
                     </a>
                   ) : (
                     <a
