@@ -13,6 +13,7 @@ import { GallerySection } from './components/GallerySection';
 import { CommitteeSection } from './components/CommitteeSection';
 import { VideoModal } from './components/VideoModal';
 import { NotificationModal } from './components/NotificationModal';
+import { LiveTimeAlertBanner } from './components/LiveTimeAlertBanner';
 import { SearchModal } from './components/SearchModal';
 import { SponsorAdBanner } from './components/SponsorAdBanner';
 import { StickyBottomAd } from './components/StickyBottomAd';
@@ -225,7 +226,10 @@ export function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const targetId = sectionId === 'events' ? 'schedule' : sectionId === 'emcees' ? 'selected-emcees' : sectionId;
+    const targetId = 
+      (sectionId === 'events' || sectionId === 'schedule' || sectionId === 'schedules') ? 'schedule' : 
+      sectionId === 'emcees' ? 'selected-emcees' : 
+      sectionId;
     const element = document.getElementById(targetId) || document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -250,6 +254,12 @@ export function App() {
         unreadNotificationsCount={unreadNotificationsCount}
         onOpenNotifications={() => setIsNotificationModalOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
+      />
+
+      {/* Real-time Time-Aware Festival Live Alert Popup/Banner (30 mins before, auto-closes after 2 hours) */}
+      <LiveTimeAlertBanner 
+        schedule={schedule}
+        onNavigate={handleNavigate}
       />
 
       {/* Top Flash Note: Recent Changes Announcement Banner */}

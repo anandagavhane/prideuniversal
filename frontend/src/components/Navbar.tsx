@@ -3,6 +3,9 @@ import {
   Home,
   Calendar, 
   Trophy, 
+  ClipboardList,
+  Mic,
+  Award,
   BarChart3, 
   Flame, 
   Image as ImageIcon, 
@@ -118,8 +121,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, []);
 
-  // 2.1 Competitions submenu under Events
+  // 5 Submenus under Events: 1) Schedules, 2) Competitions, 3) Nominations, 4) Emcees, 5) Winners
   const eventsSubmenu = [
+    { 
+      id: 'schedule', 
+      label: 'Schedules', 
+      marathi: '१२ दिवस कार्यक्रम', 
+      icon: Calendar,
+      desc: 'Full 12-day festival timetable & daily events'
+    },
     { 
       id: 'competitions', 
       label: 'Competitions', 
@@ -127,9 +137,30 @@ export const Navbar: React.FC<NavbarProps> = ({
       icon: Trophy,
       desc: 'All 7 talent events, rules & competitions'
     },
+    { 
+      id: 'nominations', 
+      label: 'Nominations', 
+      marathi: 'नोंदणी डॅशबोर्ड', 
+      icon: ClipboardList,
+      desc: 'Resident participants, entries & statistics'
+    },
+    { 
+      id: 'emcees', 
+      label: 'Emcees', 
+      marathi: '६ सूत्रसंचालक', 
+      icon: Mic,
+      desc: 'Selected festival hosts & stage anchors'
+    },
+    { 
+      id: 'winners', 
+      label: 'Winners', 
+      marathi: 'स्पर्धा निकाल', 
+      icon: Award,
+      desc: 'Championship winners & awards list'
+    },
   ];
 
-  // Exactly requested menus: 1) Home, 2) Events (2.1 Competitions), 3) Aarti, 4) Memories, 5) Accounts, 6) Committee
+  // Primary navigation: 1) Home, 2) Events (with 5 submenus), 3) Aarti, 4) Memories, 5) Accounts, 6) Committee
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { 
@@ -151,7 +182,10 @@ export const Navbar: React.FC<NavbarProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const targetId = (id === 'events' || id === 'schedule') ? 'schedule' : id === 'emcees' ? 'selected-emcees' : id;
+    const targetId = 
+      (id === 'events' || id === 'schedule' || id === 'schedules') ? 'schedule' : 
+      id === 'emcees' ? 'selected-emcees' : 
+      id;
     const element = document.getElementById(targetId) || document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -235,9 +269,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
 
-              // Submenu item for Events (with 2.1 Competitions)
+              // Submenu item for Events (with 5 submenus)
               if (item.hasSubmenu) {
-                const isGroupActive = ['events', 'schedule', 'competitions'].includes(activeTab);
+                const isGroupActive = ['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab);
                 return (
                   <div
                     key={item.id}
@@ -273,7 +307,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {/* Submenu Dropdown Card with seamless 0-gap hover bridge */}
                     {isEventsMenuOpen && (
                       <div 
-                        className="absolute top-full left-0 pt-2 w-64 z-50 animate-fadeIn"
+                        className="absolute top-full left-0 pt-2 w-72 z-50 animate-fadeIn"
                         role="menu"
                       >
                         {/* Invisible hover bridge covering the gap between button and card */}
@@ -496,38 +530,103 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[10px] text-slate-500 font-marathi">मुख्य पान</span>
             </button>
 
-            {/* 2. Events & 2.1 Competitions */}
+            {/* 2. Events & Submenus */}
             <div className="bg-white/90 rounded-xl border border-amber-300/80 overflow-hidden shadow-xs">
               <button
                 onClick={() => handleNavClick('schedule')}
                 className={`w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all cursor-pointer ${
-                  activeTab === 'schedule' || activeTab === 'events'
+                  ['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab)
                     ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md'
                     : 'text-red-950 hover:bg-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Calendar className={`w-4 h-4 ${activeTab === 'schedule' || activeTab === 'events' ? 'text-amber-300' : 'text-red-900'}`} />
+                  <Calendar className={`w-4 h-4 ${['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab) ? 'text-amber-300' : 'text-red-900'}`} />
                   <span className="text-sm">Events</span>
                 </div>
-                <span className="text-[10px] text-amber-800 font-marathi">१२ दिवस कार्यक्रम</span>
+                <span className="text-[10px] text-amber-800 font-marathi">१२ दिवस कार्यक्रम व स्पर्धा</span>
               </button>
 
-              {/* 2.1 Competitions Sub-item */}
-              <div className="pl-6 pr-2 py-1.5 bg-amber-50/80 border-t border-amber-200/80">
+              {/* 5 Sub-items under Events */}
+              <div className="pl-4 pr-2 py-1.5 bg-amber-50/90 border-t border-amber-200/80 space-y-1">
+                {/* 2.1 Schedules */}
                 <button
-                  onClick={() => handleNavClick('competitions')}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
-                    activeTab === 'competitions'
-                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-sm'
+                  onClick={() => handleNavClick('schedule')}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'schedule' || activeTab === 'events'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
                       : 'text-slate-800 hover:bg-amber-100/90'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Trophy className={`w-4 h-4 ${activeTab === 'competitions' ? 'text-amber-300' : 'text-amber-700'}`} />
-                    <span className="font-extrabold">2.1 Competitions</span>
+                  <div className="flex items-center gap-2">
+                    <Calendar className={`w-3.5 h-3.5 ${activeTab === 'schedule' || activeTab === 'events' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span>2.1 Schedules</span>
                   </div>
-                  <span className="text-[10px] text-slate-600 font-marathi font-medium">स्पर्धा व निकाल</span>
+                  <span className="text-[10px] text-slate-500 font-marathi">वेळापत्रक</span>
+                </button>
+
+                {/* 2.2 Competitions */}
+                <button
+                  onClick={() => handleNavClick('competitions')}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'competitions'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
+                      : 'text-slate-800 hover:bg-amber-100/90'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Trophy className={`w-3.5 h-3.5 ${activeTab === 'competitions' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span>2.2 Competitions</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-marathi">स्पर्धा व नियम</span>
+                </button>
+
+                {/* 2.3 Nominations */}
+                <button
+                  onClick={() => handleNavClick('nominations')}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'nominations'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
+                      : 'text-slate-800 hover:bg-amber-100/90'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className={`w-3.5 h-3.5 ${activeTab === 'nominations' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span>2.3 Nominations</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-marathi">नोंदणी</span>
+                </button>
+
+                {/* 2.4 Emcees */}
+                <button
+                  onClick={() => handleNavClick('emcees')}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'emcees'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
+                      : 'text-slate-800 hover:bg-amber-100/90'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Mic className={`w-3.5 h-3.5 ${activeTab === 'emcees' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span>2.4 Emcees</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-marathi">सूत्रसंचालक</span>
+                </button>
+
+                {/* 2.5 Winners */}
+                <button
+                  onClick={() => handleNavClick('winners')}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                    activeTab === 'winners'
+                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
+                      : 'text-slate-800 hover:bg-amber-100/90'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Award className={`w-3.5 h-3.5 ${activeTab === 'winners' ? 'text-amber-300' : 'text-amber-700'}`} />
+                    <span>2.5 Winners</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-marathi">निकाल</span>
                 </button>
               </div>
             </div>
