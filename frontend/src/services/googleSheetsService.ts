@@ -851,12 +851,19 @@ export function triggerBrowserNotification(item: NotificationItem) {
 export const TEMPLE_DECORATION_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRy2TOtVOzK9uBkcaJAQnSPQwgcN21uqsPAUPXf2W9qt9yHm1X6BTqlwR7onzBzw7r2O4KpqsHoKI_J/pub?gid=490872032&single=true&output=csv';
 
+export type DecorationMediaType = 'image' | 'youtube' | 'drive-video' | 'video';
+
 export interface DecorationSlide {
   id: string;
   imageUrl: string;
   title: string;
   subtitle?: string;
   order?: number;
+  mediaType?: DecorationMediaType;
+  videoUrl?: string;
+  embedUrl?: string;
+  youtubeId?: string;
+  driveFileId?: string;
 }
 
 export interface TempleDecorationInfo {
@@ -871,19 +878,22 @@ export const DEFAULT_DECORATION_SLIDES: DecorationSlide[] = [
     id: 'decor-1',
     imageUrl: '/photos/memories_2025_idol.jpeg',
     title: 'भव्य गणेश मंदिर व मखर सजावट',
-    subtitle: 'पारंपरिक सुवर्ण मखर व विलोभनीय विद्युत रोषणाई'
+    subtitle: 'पारंपरिक सुवर्ण मखर व विलोभनीय विद्युत रोषणाई',
+    mediaType: 'image'
   },
   {
     id: 'decor-2',
     imageUrl: '/photos/memories_2025_idol2.jpeg',
     title: 'श्री गणेश दिव्य दर्शन व आरास',
-    subtitle: 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी स्वरूप'
+    subtitle: 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी स्वरूप',
+    mediaType: 'image'
   },
   {
     id: 'decor-3',
     imageUrl: '/photos/memories_2025_idol3.jpeg',
     title: 'फुलांची नयनरम्य सजावट व सुवर्ण झालर',
-    subtitle: 'भक्तिमय वातावरणात बाप्पांचा सजलेला दरबार'
+    subtitle: 'भक्तिमय वातावरणात बाप्पांचा सजलेला दरबार',
+    mediaType: 'image'
   }
 ];
 
@@ -918,9 +928,76 @@ export function formatSafeDriveUrl(url?: string): string {
 }
 
 /**
- * Dynamically fetches all Ganapati Temple & Mandap Decoration Photos from Google Sheets / Drive
- * Supports dedicated tab format: Photo URL | Title | Subtitle | Active | Order
- * Specifically maps Name and PhotoURL columns
+ * Parses and classifies media URLs (images, YouTube, Google Drive video previews, direct video files).
+ */
+export function parseDecorationMedia(mediaUrl?: string, explicitVideoUrl?: string): {
+  mediaType: DecorationMediaType;
+  imageUrl: string;
+  videoUrl?: string;
+  embedUrl?: string;
+  youtubeId?: string;
+  driveFileId?: string;
+} {
+  const targetUrl = (explicitVideoUrl || mediaUrl || '').trim();
+  if (!targetUrl) {
+    return { mediaType: 'image', imageUrl: '/photos/memories_2025_idol.jpeg' };
+  }
+
+  // 1. YouTube detection (watch?v=, youtu.be, shorts, embed)
+  const ytMatch = targetUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    const ytId = ytMatch[1];
+    return {
+      mediaType: 'youtube',
+      youtubeId: ytId,
+      embedUrl: `https://www.youtube.com/embed/${ytId}`,
+      videoUrl: `https://www.youtube.com/watch?v=${ytId}`,
+      imageUrl: mediaUrl && !mediaUrl.includes('youtu') ? formatSafeDriveUrl(mediaUrl) : `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+    };
+  }
+
+  // 2. Direct video file detection (.mp4, .webm, .mov, .m4v, .ogv)
+  const isDirectVideo = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(targetUrl);
+  if (isDirectVideo) {
+    return {
+      mediaType: 'video',
+      videoUrl: targetUrl,
+      imageUrl: mediaUrl && !/\.(mp4|webm|mov|m4v|ogv)/i.test(mediaUrl) ? formatSafeDriveUrl(mediaUrl) : '/photos/memories_2025_idol.jpeg'
+    };
+  }
+
+  // 3. Google Drive URL detection
+  const driveMatch =
+    targetUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    targetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) ||
+    targetUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+    targetUrl.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+
+  if (driveMatch && driveMatch[1]) {
+    const driveId = driveMatch[1];
+    const isExplicitVideo = Boolean(explicitVideoUrl) || /preview|video|\.mp4/i.test(targetUrl);
+    if (isExplicitVideo) {
+      return {
+        mediaType: 'drive-video',
+        driveFileId: driveId,
+        embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+        videoUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+        imageUrl: `https://lh3.googleusercontent.com/d/${driveId}`
+      };
+    }
+  }
+
+  // 4. Default: Standard photo / image
+  return {
+    mediaType: 'image',
+    imageUrl: formatSafeDriveUrl(targetUrl)
+  };
+}
+
+/**
+ * Dynamically fetches all Ganapati Temple & Mandap Decoration Photos & Videos from Google Sheets / Drive
+ * Supports dedicated tab format: Photo URL | Video URL | Title | Subtitle | Active | Order
+ * Supports YouTube, Google Drive video previews, MP4 files, and Drive photos.
  */
 export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORATION_CSV_URL): Promise<DecorationSlide[]> {
   const cacheBuster = `&_t=${Date.now()}`;
@@ -936,7 +1013,8 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
         const rows = parseCSV(text);
         if (rows.length > 1) {
           const headers = rows[0].map((h) => h.toLowerCase().trim());
-          const photoColIdx = headers.findIndex((h) => h.includes('photo') || h.includes('image') || h.includes('url') || h.includes('link'));
+          const videoColIdx = headers.findIndex((h) => h.includes('video') || h.includes('व्हिडिओ') || h.includes('vid') || h.includes('youtube') || h.includes('yt'));
+          const photoColIdx = headers.findIndex((h) => h.includes('photo') || h.includes('image') || h.includes('pic') || h.includes('img') || h.includes('url') || h.includes('link'));
           const titleColIdx = headers.findIndex((h) => h.includes('title') || h.includes('name') || h.includes('नाव') || h.includes('शीर्षक'));
           const subtitleColIdx = headers.findIndex((h) => h.includes('subtitle') || h.includes('desc') || h.includes('वर्णन') || h.includes('caption'));
           const activeColIdx = headers.findIndex((h) => h.includes('active') || h.includes('status') || h.includes('सक्रिय'));
@@ -944,8 +1022,11 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
 
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            const rawUrl = photoColIdx !== -1 ? row[photoColIdx] : row.find((c) => /https?:\/\/|\.jpg|\.jpeg|\.png|drive\.google\.com/i.test(c));
-            if (!rawUrl) continue;
+            const rawVideo = videoColIdx !== -1 ? row[videoColIdx]?.trim() : '';
+            const rawPhoto = photoColIdx !== -1 ? row[photoColIdx]?.trim() : '';
+            const rawFallback = !rawVideo && !rawPhoto ? row.find((c) => /https?:\/\/|\.jpg|\.jpeg|\.png|\.mp4|\.webm|youtu|drive\.google\.com/i.test(c)) : '';
+            const targetMedia = rawVideo || rawPhoto || rawFallback;
+            if (!targetMedia) continue;
 
             // Check active flag if present
             if (activeColIdx !== -1 && row[activeColIdx]) {
@@ -955,7 +1036,7 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
               }
             }
 
-            const formattedUrl = formatSafeDriveUrl(rawUrl);
+            const mediaParsed = parseDecorationMedia(rawPhoto || targetMedia, rawVideo);
             let title = (titleColIdx !== -1 && row[titleColIdx]) ? row[titleColIdx].trim() : `मंदिर व मखर आरास ${i}`;
             let subtitle = (subtitleColIdx !== -1 && row[subtitleColIdx]) ? row[subtitleColIdx].trim() : undefined;
 
@@ -974,21 +1055,32 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
 
             foundSlides.push({
               id: `decor-sheet-${i}`,
-              imageUrl: formattedUrl,
+              imageUrl: mediaParsed.imageUrl,
               title,
               subtitle,
-              order: isNaN(order) ? i : order
+              order: isNaN(order) ? i : order,
+              mediaType: mediaParsed.mediaType,
+              videoUrl: mediaParsed.videoUrl,
+              embedUrl: mediaParsed.embedUrl,
+              youtubeId: mediaParsed.youtubeId,
+              driveFileId: mediaParsed.driveFileId
             });
           }
         } else if (rows.length === 1) {
           // If only 1 row without header, or raw list
           for (let i = 0; i < rows[0].length; i++) {
             const cell = rows[0][i];
-            if (/https?:\/\/|\.jpg|\.jpeg|\.png|drive\.google\.com/i.test(cell)) {
+            if (/https?:\/\/|\.jpg|\.jpeg|\.png|\.mp4|\.webm|youtu|drive\.google\.com/i.test(cell)) {
+              const mediaParsed = parseDecorationMedia(cell);
               foundSlides.push({
                 id: `decor-raw-${i}`,
-                imageUrl: formatSafeDriveUrl(cell),
-                title: 'गणेश मंदिर व मखर सजावट'
+                imageUrl: mediaParsed.imageUrl,
+                title: 'गणेश मंदिर व मखर सजावट',
+                mediaType: mediaParsed.mediaType,
+                videoUrl: mediaParsed.videoUrl,
+                embedUrl: mediaParsed.embedUrl,
+                youtubeId: mediaParsed.youtubeId,
+                driveFileId: mediaParsed.driveFileId
               });
             }
           }

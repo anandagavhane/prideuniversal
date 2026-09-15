@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, Layers } from 'lucide-react';
+import { Sparkles, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, Layers, Play, Film } from 'lucide-react';
 import { 
   fetchTempleDecorationSlides, 
   DecorationSlide, 
@@ -98,6 +98,11 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
     subtitle: 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी स्वरूप'
   };
 
+  const isCurrentVideo = 
+    currentSlide.mediaType === 'youtube' || 
+    currentSlide.mediaType === 'drive-video' || 
+    currentSlide.mediaType === 'video';
+
   // Close modal on Escape key and enable Arrow key navigation
   useEffect(() => {
     if (!isImageModalOpen) return;
@@ -155,11 +160,11 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                     setIsImageModalOpen(true);
                   }
                 }}
-                title="फोटो मोठा करून पाहण्यासाठी क्लिक करा / Click to view full photo in popup"
+                title={isCurrentVideo ? "व्हिडिओ पाहण्यासाठी क्लिक करा / Click to play video in popup" : "फोटो मोठा करून पाहण्यासाठी क्लिक करा / Click to view full photo in popup"}
               >
                 <div className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-lg border-2 border-amber-400 bg-slate-950">
                   <img 
-                    src={currentSlide.imageUrl} 
+                    src={currentSlide.imageUrl || '/photos/memories_2025_idol.jpeg'} 
                     alt={currentSlide.title} 
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -170,12 +175,19 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25"></div>
 
-                  {/* Top Counter Badge & Zoom Hint */}
+                  {/* Top Counter Badge & Media Type Indicator */}
                   <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <span className="px-2.5 py-0.5 rounded-full bg-black/60 text-amber-300 text-[10px] font-black border border-amber-300/40 backdrop-blur-xs flex items-center gap-1">
-                      <span>🌺</span>
-                      <span>मखर आरास</span>
-                    </span>
+                    {isCurrentVideo ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-900/90 text-amber-200 text-[10px] font-black border border-amber-300/60 backdrop-blur-xs flex items-center gap-1 shadow-sm">
+                        <Film className="w-3 h-3 text-amber-300 animate-pulse" />
+                        <span>व्हिडिओ / Video</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full bg-black/60 text-amber-300 text-[10px] font-black border border-amber-300/40 backdrop-blur-xs flex items-center gap-1">
+                        <span>🌺</span>
+                        <span>मखर आरास</span>
+                      </span>
+                    )}
                     {slides.length > 1 && (
                       <span className="px-2.5 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-bold border border-white/20 backdrop-blur-xs flex items-center gap-1">
                         <Layers className="w-2.5 h-2.5 text-amber-300" />
@@ -184,11 +196,29 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                     )}
                   </div>
 
-                  {/* Center Hover Zoom Hint */}
+                  {/* Center Play Button Overlay for Video */}
+                  {isCurrentVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-700/90 text-amber-200 border-2 border-amber-300 flex items-center justify-center shadow-[0_0_25px_rgba(220,38,38,0.7)] group-hover:scale-115 group-hover:bg-red-600 transition-all">
+                        <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Center Hover Zoom / Play Hint */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
                     <span className="px-3.5 py-1.5 rounded-full bg-black/80 text-amber-200 text-xs font-bold flex items-center gap-1.5 backdrop-blur-xs border border-amber-300/60 shadow-xl">
-                      <ZoomIn className="w-4 h-4 text-amber-300" />
-                      <span>मोठे करून पहा (Click to View)</span>
+                      {isCurrentVideo ? (
+                        <>
+                          <Play className="w-4 h-4 text-amber-300 fill-current" />
+                          <span>व्हिडिओ पहा (Click to Play Video)</span>
+                        </>
+                      ) : (
+                        <>
+                          <ZoomIn className="w-4 h-4 text-amber-300" />
+                          <span>मोठे करून पहा (Click to View)</span>
+                        </>
+                      )}
                     </span>
                   </div>
 
@@ -216,13 +246,21 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                     </>
                   )}
 
-                  {/* Bottom Title & Zoom Label */}
+                  {/* Bottom Title & Action Label */}
                   <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
                     <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wider truncate pr-2">
                       {currentSlide.title}
                     </span>
                     <span className="text-[10px] font-bold text-white/90 bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/20 flex-shrink-0">
-                      <ZoomIn className="w-3 h-3 text-amber-300" /> पाहा
+                      {isCurrentVideo ? (
+                        <>
+                          <Play className="w-3 h-3 text-amber-300 fill-current" /> चालवा
+                        </>
+                      ) : (
+                        <>
+                          <ZoomIn className="w-3 h-3 text-amber-300" /> पाहा
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -321,13 +359,13 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
             {/* Header Bar with Title and Close Action */}
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-red-950 via-red-900 to-red-950 text-amber-100 border-b border-amber-400/40 shrink-0 select-none">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <span className="text-lg flex-shrink-0">🌺</span>
+                <span className="text-lg flex-shrink-0">{isCurrentVideo ? '🎬' : '🌺'}</span>
                 <div className="min-w-0">
                   <h3 className="font-festive font-bold text-sm sm:text-base text-amber-200 truncate">
-                    {currentSlide.title || 'गणेश मंदिर व भव्य मखर सजावट'}
+                    {currentSlide.title || (isCurrentVideo ? 'गणेश मंदिर व सजावट व्हिडिओ' : 'गणेश मंदिर व भव्य मखर सजावट')}
                   </h3>
                   <p className="text-[11px] text-amber-300/80 truncate">
-                    {currentSlide.subtitle || 'Ganapati Temple & Mandap Decoration'}
+                    {currentSlide.subtitle || (isCurrentVideo ? 'Ganapati Temple & Mandap Video' : 'Ganapati Temple & Mandap Decoration')}
                   </p>
                 </div>
               </div>
@@ -351,17 +389,49 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
               </div>
             </div>
 
-            {/* Photo Preview Container with Prev/Next Navigation */}
-            <div className="relative flex-1 min-h-[240px] max-h-[68vh] bg-slate-950 flex items-center justify-center p-2 sm:p-4 overflow-hidden select-none">
-              <img
-                src={currentSlide.imageUrl}
-                alt={currentSlide.title}
-                referrerPolicy="no-referrer"
-                className="w-auto h-auto max-w-full max-h-[64vh] object-contain mx-auto rounded-lg shadow-2xl transition-all duration-200 block"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
-                }}
-              />
+            {/* Media Preview Container with Prev/Next Navigation */}
+            <div className="relative flex-1 min-h-[240px] max-h-[70vh] bg-slate-950 flex items-center justify-center p-2 sm:p-4 overflow-hidden select-none">
+              {currentSlide.mediaType === 'youtube' ? (
+                <div className="w-full aspect-video max-w-4xl max-h-[66vh] mx-auto bg-black rounded-lg overflow-hidden shadow-2xl flex items-center justify-center">
+                  <iframe
+                    src={`${currentSlide.embedUrl || `https://www.youtube.com/embed/${currentSlide.youtubeId}`}?autoplay=1&rel=0`}
+                    title={currentSlide.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+              ) : currentSlide.mediaType === 'drive-video' ? (
+                <div className="w-full aspect-video max-w-4xl max-h-[66vh] mx-auto bg-black rounded-lg overflow-hidden shadow-2xl flex items-center justify-center">
+                  <iframe
+                    src={currentSlide.embedUrl || (currentSlide.driveFileId ? `https://drive.google.com/file/d/${currentSlide.driveFileId}/preview` : currentSlide.videoUrl || currentSlide.imageUrl)}
+                    title={currentSlide.title}
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+              ) : currentSlide.mediaType === 'video' ? (
+                <div className="w-full max-h-[66vh] mx-auto bg-black rounded-lg overflow-hidden shadow-2xl flex items-center justify-center">
+                  <video
+                    src={currentSlide.videoUrl || currentSlide.imageUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-auto h-auto max-w-full max-h-[64vh] object-contain mx-auto rounded-lg shadow-2xl"
+                  />
+                </div>
+              ) : (
+                <img
+                  src={currentSlide.imageUrl}
+                  alt={currentSlide.title}
+                  referrerPolicy="no-referrer"
+                  className="w-auto h-auto max-w-full max-h-[64vh] object-contain mx-auto rounded-lg shadow-2xl transition-all duration-200 block"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
+                  }}
+                />
+              )}
 
               {/* In-Modal Prev/Next Navigation Arrows */}
               {slides.length > 1 && (
@@ -369,16 +439,16 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = (
                   <button
                     onClick={handlePrevSlide}
                     className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/70 hover:bg-black text-amber-300 hover:text-white border border-amber-400/50 shadow-2xl transition-transform active:scale-90 z-20 cursor-pointer"
-                    aria-label="Previous decoration photo"
-                    title="Previous photo (←)"
+                    aria-label="Previous decoration slide"
+                    title="Previous photo/video (←)"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={handleNextSlide}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/70 hover:bg-black text-amber-300 hover:text-white border border-amber-400/50 shadow-2xl transition-transform active:scale-90 z-20 cursor-pointer"
-                    aria-label="Next decoration photo"
-                    title="Next photo (→)"
+                    aria-label="Next decoration slide"
+                    title="Next photo/video (→)"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
