@@ -21,9 +21,10 @@ import { fetchSponsorAds, SponsorAd, DEFAULT_SPONSOR_ADS } from './services/adSe
 import { Capacitor } from '@capacitor/core';
 import { 
   fetchAccountsData, 
-  fetchNominationsData,
+  fetchNominationsData, 
   fetchNotificationsData,
   fetchTempleDecorationSlides,
+  fetchFestivalSchedule,
   DecorationSlide,
   DEFAULT_DECORATION_SLIDES
 } from './services/googleSheetsService';
@@ -33,13 +34,16 @@ import {
   requestAllNotificationPermissions
 } from './services/nativeNotificationService';
 import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS } from './data/fallbackData';
-import { AccountsData, NominationsDashboardData, NotificationItem } from './types';
+import { FESTIVAL_SCHEDULE } from './data/scheduleData';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem } from './types';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [accounts, setAccounts] = useState<AccountsData>(FALLBACK_ACCOUNTS_DATA);
   const [nominations, setNominations] = useState<NominationsDashboardData>(FALLBACK_NOMINATIONS_DATA);
   const [notifications, setNotifications] = useState<NotificationItem[]>(FALLBACK_NOTIFICATIONS);
+  const [schedule, setSchedule] = useState<EventItem[]>(FESTIVAL_SCHEDULE);
+  const [scheduleLastUpdated, setScheduleLastUpdated] = useState<string>('');
   const [sponsorAds, setSponsorAds] = useState<SponsorAd[]>(DEFAULT_SPONSOR_ADS);
   const [decorationSlides, setDecorationSlides] = useState<DecorationSlide[]>(DEFAULT_DECORATION_SLIDES);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
@@ -72,12 +76,13 @@ export function App() {
   const loadSheetsData = useCallback(async (showLoading = false) => {
     if (showLoading) setIsRefreshing(true);
     try {
-      const [accRes, nomsRes, notifsRes, adsRes, decorRes] = await Promise.allSettled([
+      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes] = await Promise.allSettled([
         fetchAccountsData(),
         fetchNominationsData(),
         fetchNotificationsData(),
         fetchSponsorAds(),
-        fetchTempleDecorationSlides()
+        fetchTempleDecorationSlides(),
+        fetchFestivalSchedule()
       ]);
 
       if (accRes.status === 'fulfilled') setAccounts(accRes.value);
@@ -104,6 +109,10 @@ export function App() {
         setDecorationSlides(decorRes.value);
       }
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      if (schedRes.status === 'fulfilled' && schedRes.value && schedRes.value.length > 0) {
+        setSchedule(schedRes.value);
+        setScheduleLastUpdated(timeStr);
+      }
       setLastSyncNotice(`Live data updated at ${timeStr}`);
       setTimeout(() => setLastSyncNotice(''), 3500);
     } catch (err) {
@@ -265,7 +274,12 @@ export function App() {
         />
 
         {/* 12-Day Event Schedule */}
-        <ScheduleSection />
+        <ScheduleSection 
+          scheduleData={schedule}
+          isLoading={isRefreshing}
+          onRefresh={() => loadSheetsData(true)}
+          lastUpdated={scheduleLastUpdated}
+        />
 
         {/* Games, Competitions & Cultural Programs */}
         <CompetitionsSection
@@ -331,6 +345,7 @@ export function App() {
         accounts={accounts}
         notifications={notifications}
         nominations={nominations}
+        schedule={schedule}
         onNavigateSection={handleNavigate}
       />
 

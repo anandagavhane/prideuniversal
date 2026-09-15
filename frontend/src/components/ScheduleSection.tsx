@@ -1,23 +1,45 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Sparkles } from 'lucide-react';
+import { Calendar, Clock, MapPin, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
 import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { EventItem } from '../types';
 
-export const ScheduleSection: React.FC = () => {
+interface ScheduleSectionProps {
+  scheduleData?: EventItem[];
+  isLoading?: boolean;
+  onRefresh?: () => void;
+  lastUpdated?: string;
+}
+
+export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
+  scheduleData,
+  isLoading = false,
+  onRefresh,
+  lastUpdated
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
+  const activeEvents = scheduleData && scheduleData.length > 0 ? scheduleData : FESTIVAL_SCHEDULE;
+
+  const standardCategoryIcons: Record<string, string> = {
+    'Aagaman': '🪔',
+    'Games': '🏆',
+    'Cultural': '🎭',
+    'Puja': '🍽️',
+    'Visarjan': '🌊'
+  };
+
+  const presentCategories = Array.from(new Set(activeEvents.map(e => e.category).filter(Boolean)));
   const categories = [
-    { id: 'All', label: 'All 12 Days' },
-    { id: 'Aagaman', label: '🪔 Aagaman' },
-    { id: 'Games', label: '🏆 Fun & Games' },
-    { id: 'Cultural', label: '🎭 Cultural Night' },
-    { id: 'Puja', label: '🍽️ Puja & Mahaprasad' },
-    { id: 'Visarjan', label: '🌊 Visarjan' }
+    { id: 'All', label: `All (${activeEvents.length} Days)` },
+    ...presentCategories.map(cat => ({
+      id: cat,
+      label: `${standardCategoryIcons[cat] || '✨'} ${cat}`
+    }))
   ];
 
   const filteredEvents = selectedCategory === 'All'
-    ? FESTIVAL_SCHEDULE
-    : FESTIVAL_SCHEDULE.filter(e => e.category === selectedCategory);
+    ? activeEvents
+    : activeEvents.filter(e => e.category === selectedCategory);
 
   return (
     <section 
@@ -52,6 +74,30 @@ export const ScheduleSection: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
             From 14 September 2026 to 25 September 2026 at Pride Universal Society Premises
           </p>
+
+          {/* Live Sync Status & Manual Refresh Bar */}
+          <div className="mt-4 inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+            </span>
+            <span>Live Sync with Google Sheet</span>
+            {lastUpdated && (
+              <span className="text-[11px] text-emerald-600 hidden sm:inline">
+                • {lastUpdated}
+              </span>
+            )}
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                title="Sync latest changes from Google Sheet"
+                className="ml-1 p-1 hover:bg-emerald-100 rounded-full transition-colors text-emerald-700"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filter Category Pills */}

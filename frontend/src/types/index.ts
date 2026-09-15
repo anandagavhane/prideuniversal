@@ -6,7 +6,7 @@ export interface EventItem {
   title: string;
   description?: string;
   icon: string;
-  category: 'Aagaman' | 'Games' | 'Cultural' | 'Puja' | 'Visarjan';
+  category: 'Aagaman' | 'Games' | 'Cultural' | 'Puja' | 'Visarjan' | string;
   highlight?: boolean;
 }
 

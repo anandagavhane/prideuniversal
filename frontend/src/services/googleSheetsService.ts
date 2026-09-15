@@ -1,5 +1,6 @@
-import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem } from '../types';
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem } from '../types';
 import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS } from '../data/fallbackData';
+import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { SPONSORS_CSV_URL } from './adService';
 
 export const NOMINATIONS_CSV_URL =
@@ -11,6 +12,10 @@ export const ACCOUNTS_CSV_URL =
 // Published CSV URL for Notifications Tab
 export const NOTIFICATIONS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRL9pEjn_gQvQc0I6-ZEt_UGzxIjaKNnHS8mrhRrdBcbkfCMbsDbdyZN3Jg-vhona_gqW9Cl8hXEttA/pub?gid=0&single=true&output=csv';
+
+// Published CSV URL for Event Schedules Tab
+export const SCHEDULE_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=2029319196&single=true&output=csv';
 
 export const GOOGLE_NOMINATION_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
@@ -1134,4 +1139,113 @@ export async function fetchTempleDecorationData(csvUrl: string = TEMPLE_DECORATI
   }
   return null;
 }
+
+/**
+ * Format 24-hour time or irregular time strings into friendly AM/PM display
+ */
+export function formatScheduleTime(timeStr: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  // Match 24h format like 20:30, 08:45, 20:30:00
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (match24) {
+    let hour = parseInt(match24[1], 10);
+    const minute = match24[2];
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${ampm}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Format date string (e.g., 2026-09-14) into "Day X - 14 Sep 2026"
+ */
+export function formatScheduleDisplayDate(day: number, dateStr: string): string {
+  if (!dateStr) return `Day ${day}`;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const m = dateStr.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) {
+    const monthIdx = parseInt(m[2], 10) - 1;
+    const monthName = months[monthIdx] || m[2];
+    const dayNum = parseInt(m[3], 10);
+    return `Day ${day} - ${dayNum} ${monthName} ${m[1]}`;
+  }
+  return `Day ${day} - ${dateStr.trim()}`;
+}
+
+/**
+ * Fetch and parse live Festival Schedule from Google Sheets
+ */
+export async function fetchFestivalSchedule(csvUrl: string = SCHEDULE_CSV_URL): Promise<EventItem[]> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    if (rows.length <= 1) {
+      return FESTIVAL_SCHEDULE;
+    }
+
+    // Find header column indices
+    const headerRow = rows[0].map(h => h.toLowerCase().trim());
+    const dayIdx = headerRow.findIndex(h => h.includes('day'));
+    const dateIdx = headerRow.findIndex(h => h.includes('date'));
+    const timeIdx = headerRow.findIndex(h => h.includes('time'));
+    const titleIdx = headerRow.findIndex(h => h.includes('title') || h.includes('event') || h.includes('name'));
+    const descIdx = headerRow.findIndex(h => h.includes('desc') || h.includes('detail'));
+    const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('type'));
+    const iconIdx = headerRow.findIndex(h => h.includes('icon') || h.includes('emoji'));
+    const highlightIdx = headerRow.findIndex(h => h.includes('highlight') || h.includes('major') || h.includes('important'));
+
+    const parsedEvents: EventItem[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length < 2 || row.every(cell => !cell || cell.trim() === '')) continue;
+
+      const rawDay = dayIdx !== -1 && row[dayIdx] ? row[dayIdx].trim() : '';
+      const day = parseInt(rawDay.replace(/\D/g, ''), 10) || (parsedEvents.length + 1);
+      const dateStr = dateIdx !== -1 && row[dateIdx] ? row[dateIdx].trim() : '';
+      const rawTime = timeIdx !== -1 && row[timeIdx] ? row[timeIdx].trim() : '';
+      const time = formatScheduleTime(rawTime);
+      const rawTitle = titleIdx !== -1 && row[titleIdx] ? row[titleIdx].trim() : `Festival Event ${day}`;
+      const description = descIdx !== -1 && row[descIdx] ? row[descIdx].trim() : '';
+      const category = (catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : 'Cultural');
+      const rawIcon = iconIdx !== -1 && row[iconIdx] ? row[iconIdx].trim() : '';
+      const icon = rawIcon || '📅';
+
+      const rawHighlight = highlightIdx !== -1 && row[highlightIdx] ? row[highlightIdx].trim() : '';
+      const highlight = /^(yes|true|1|y)$/i.test(rawHighlight);
+
+      // Prepend icon to title if not already present, ensuring consistent visual flair
+      const displayTitle = icon && !rawTitle.startsWith(icon) ? `${icon} ${rawTitle}` : rawTitle;
+
+      parsedEvents.push({
+        day,
+        dateStr,
+        displayDate: formatScheduleDisplayDate(day, dateStr),
+        time,
+        title: displayTitle,
+        description,
+        icon,
+        category,
+        highlight
+      });
+    }
+
+    if (parsedEvents.length > 0) {
+      parsedEvents.sort((a, b) => a.day - b.day);
+      return parsedEvents;
+    }
+  } catch (err) {
+    console.warn('Error fetching live Festival Schedule from Google Sheets:', err);
+  }
+
+  return FESTIVAL_SCHEDULE;
+}
+
 

@@ -1,5 +1,5 @@
 import { FESTIVAL_SCHEDULE, COMMITTEE_DATA, GALLERY_PHOTOS } from '../data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem } from '../types';
 
 export interface SearchResultItem {
   id: string;
@@ -32,7 +32,8 @@ export const QUICK_SEARCH_TAGS = [
 export function buildSearchIndex(
   accounts?: AccountsData | null,
   notifications?: NotificationItem[] | null,
-  nominations?: NominationsDashboardData | null
+  nominations?: NominationsDashboardData | null,
+  schedule?: EventItem[] | null
 ): SearchResultItem[] {
   const items: SearchResultItem[] = [];
 
@@ -153,7 +154,8 @@ export function buildSearchIndex(
   });
 
   // 3. 12-DAY FESTIVAL SCHEDULE
-  FESTIVAL_SCHEDULE.forEach(evt => {
+  const activeSchedule = (schedule && schedule.length > 0) ? schedule : FESTIVAL_SCHEDULE;
+  activeSchedule.forEach(evt => {
     items.push({
       id: `schedule_day_${evt.day}`,
       title: `${evt.displayDate}: ${evt.title}`,
