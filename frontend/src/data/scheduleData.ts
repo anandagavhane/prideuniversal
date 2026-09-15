@@ -223,7 +223,7 @@ export const GALLERY_PHOTOS: GalleryPhoto[] = [
   },
 
   // ==========================================
-  // 4) Mahaprasad (2 Photos)
+  // 4) Mahaprasad
   // ==========================================
   {
     id: 'g_mahaprasad_serve',
@@ -231,13 +231,6 @@ export const GALLERY_PHOTOS: GalleryPhoto[] = [
     category: 'Mahaprasad',
     caption: 'सोसायटी कार्यकर्ते व स्वयंसेवक एकत्र येऊन महाप्रसाद भोजन व्यवस्था आनंदाने सांभाळताना.',
     imageUrl: '/photos/memories_mahaprasad_serve.jpeg'
-  },
-  {
-    id: 'g_mahaprasad_gathering',
-    title: 'सोसायटी महाप्रसाद सहभोजन (Community Gathering)',
-    category: 'Mahaprasad',
-    caption: 'सोसायटीचे ज्येष्ठ नागरिक व रहिवासी एकत्र बसून स्नेहभोजनाचा आनंद घेताना.',
-    imageUrl: '/photos/memories_mahaprasad1.jpeg'
   },
 
   // ==========================================
