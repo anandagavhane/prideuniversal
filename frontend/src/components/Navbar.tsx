@@ -17,7 +17,8 @@ import {
   Search,
   ChevronDown,
   Award,
-  ClipboardList
+  ClipboardList,
+  Mic
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -28,6 +29,7 @@ interface NavbarProps {
   isLive?: boolean;
   lastUpdated?: string;
   totalNominations?: number;
+  selectedEmceesCount?: number;
   autoSyncEnabled?: boolean;
   toggleAutoSync?: () => void;
   syncCountdown?: number;
@@ -47,6 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isLive,
   lastUpdated,
   totalNominations,
+  selectedEmceesCount = 6,
   autoSyncEnabled,
   toggleAutoSync,
   syncCountdown,
@@ -95,6 +98,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       desc: 'Podium champions & prizes'
     },
     { 
+      id: 'emcees', 
+      label: 'Selected Emcees', 
+      marathi: 'निवडक सूत्रसंचालक', 
+      icon: Mic,
+      badge: selectedEmceesCount ? `${selectedEmceesCount} Hosts` : '6 Hosts',
+      badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      desc: 'Official stage hosts & anchors'
+    },
+    { 
       id: 'nominations', 
       label: 'Nominations', 
       marathi: 'सहभाग नोंदणी डॅशबोर्ड', 
@@ -126,7 +138,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const element = document.getElementById(id);
+    const targetId = id === 'emcees' ? 'selected-emcees' : id;
+    const element = document.getElementById(targetId) || document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
@@ -209,9 +222,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
 
-              // Submenu item for Competitions, Winners & Nominations
+              // Submenu item for Competitions, Winners, Emcees & Nominations
               if (item.hasSubmenu) {
-                const isGroupActive = ['competitions', 'winners', 'nominations'].includes(activeTab);
+                const isGroupActive = ['competitions', 'winners', 'nominations', 'emcees', 'selected-emcees'].includes(activeTab);
                 return (
                   <div
                     key={item.id}
@@ -245,7 +258,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {/* Submenu Dropdown Card */}
                     {isCompetitionsMenuOpen && (
                       <div 
-                        className="absolute top-full left-0 mt-1.5 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-amber-400 p-2 z-50 animate-fadeIn"
+                        className="absolute top-full left-0 mt-1.5 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-amber-400 p-2 z-50 animate-fadeIn"
                         role="menu"
                       >
                         <div className="px-3 py-1.5 border-b border-amber-200 mb-1 text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center justify-between">
@@ -254,7 +267,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </div>
                         {competitionSubmenu.map(sub => {
                           const SubIcon = sub.icon;
-                          const isSubActive = activeTab === sub.id;
+                          const isSubActive = activeTab === sub.id || (sub.id === 'emcees' && activeTab === 'selected-emcees');
                           return (
                             <button
                               key={sub.id}
@@ -454,7 +467,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Grouped Competitions, Winners & Nominations Card */}
+          {/* Grouped Competitions, Winners, Emcees & Nominations Card */}
           <div className="mb-3 rounded-2xl bg-white/95 border-2 border-amber-300 p-2.5 shadow-sm">
             <div className="flex items-center justify-between px-2 py-1 mb-1.5 border-b border-amber-200">
               <div className="flex items-center gap-1.5 font-black text-xs text-red-950">
@@ -463,15 +476,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <span className="text-[10px] font-marathi text-amber-900 font-bold">कला व क्रीडा</span>
             </div>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {competitionSubmenu.map(sub => {
                 const SubIcon = sub.icon;
-                const isSubActive = activeTab === sub.id;
+                const isSubActive = activeTab === sub.id || (sub.id === 'emcees' && activeTab === 'selected-emcees');
                 return (
                   <button
                     key={sub.id}
                     onClick={() => handleNavClick(sub.id)}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl text-center transition-all cursor-pointer ${
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl text-center transition-all cursor-pointer ${
                       isSubActive
                         ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md border border-amber-300'
                         : 'bg-amber-50 hover:bg-amber-100/80 text-red-950 border border-amber-200/80'
@@ -480,7 +493,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <SubIcon className={`w-4 h-4 mb-1 ${isSubActive ? 'text-amber-300' : 'text-amber-700'}`} />
                     <span className="text-[11px] font-black leading-tight">{sub.label}</span>
                     <span className="text-[9px] text-slate-500 font-medium font-marathi leading-none mt-0.5">
-                      {sub.id === 'competitions' ? 'नियम' : sub.id === 'winners' ? 'निकाल' : `${totalNominations || ''} नोंदी`}
+                      {sub.id === 'competitions' ? 'नियम' : sub.id === 'winners' ? 'निकाल' : sub.id === 'emcees' ? '६ सूत्रसंचालक' : `${totalNominations || ''} नोंदी`}
                     </span>
                   </button>
                 );

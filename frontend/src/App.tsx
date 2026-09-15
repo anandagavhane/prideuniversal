@@ -225,7 +225,8 @@ export function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const element = document.getElementById(sectionId);
+    const targetId = sectionId === 'emcees' ? 'selected-emcees' : sectionId;
+    const element = document.getElementById(targetId) || document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
@@ -242,6 +243,7 @@ export function App() {
         isLive={accounts.isLive || nominations.isLive}
         lastUpdated={accounts.lastUpdated || nominations.lastUpdated}
         totalNominations={nominations.totalNominations}
+        selectedEmceesCount={selectedEmcees.filter(e => e.status.toLowerCase() === 'selected').length}
         autoSyncEnabled={autoSyncEnabled}
         toggleAutoSync={() => setAutoSyncEnabled(prev => !prev)}
         syncCountdown={syncCountdown}
