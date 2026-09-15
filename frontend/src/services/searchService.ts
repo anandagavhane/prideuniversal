@@ -1,4 +1,5 @@
 import { FESTIVAL_SCHEDULE, COMMITTEE_DATA, GALLERY_PHOTOS } from '../data/scheduleData';
+import { AARTI_LIST } from '../data/aartiData';
 import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
 
 export interface SearchResultItem {
@@ -13,11 +14,12 @@ export interface SearchResultItem {
   icon: string;
   timeOrDate?: string;
   keywords: string[];
+  targetAartiId?: string;
 }
 
 export const QUICK_SEARCH_TAGS = [
   { label: '🏆 Winners / विजेते', query: 'winner' },
-  { label: '🪔 Daily Aarti / महाआरती', query: 'aarti' },
+  { label: '🪔 Aarti Sangrah / आरती संग्रह', query: 'aarti' },
   { label: '🎙️ Selected Emcees', query: 'emcee' },
   { label: '💃 Dance / नृत्य स्पर्धा', query: 'dance' },
   { label: '🍽️ Satyanarayan & Mahaprasad', query: 'mahaprasad' },
@@ -94,6 +96,40 @@ export function buildSearchIndex(
       keywords: ['mahaprasad', 'prasad', 'bhojan', 'dinner', 'feast', 'annadan', 'महाप्रसाद', 'प्रसाद', 'अन्नदान', 'भोजन']
     }
   );
+
+  // 1b. AARTI SANGRAH (LIVELYRICS FOR CHANTING & DEVOTION)
+  AARTI_LIST.forEach(aarti => {
+    // Extract key stanza snippets for deep search matching
+    const lyricsSnippet = aarti.stanzas
+      .flatMap(s => [...s.marathi, ...(s.english || [])])
+      .slice(0, 10)
+      .join(' ')
+      .toLowerCase();
+
+    items.push({
+      id: `aarti_book_${aarti.id}`,
+      title: `${aarti.title} (${aarti.marathiTitle.split('(')[0].trim()})`,
+      marathiTitle: aarti.marathiTitle,
+      description: `${aarti.deity} • ${aarti.composer ? aarti.composer + ' • ' : ''}${aarti.description}`,
+      category: 'Aarti',
+      categoryLabel: 'आरती संग्रह (Lyrics)',
+      categoryColor: 'bg-amber-100 text-amber-950 border-amber-400',
+      sectionId: 'aarti',
+      icon: aarti.icon || '🪔',
+      targetAartiId: aarti.id,
+      timeOrDate: aarti.deity,
+      keywords: [
+        'aarti', 'arti', 'sangrah', 'lyrics', 'stotra', 'prayer', 'chant', 'book',
+        aarti.id,
+        aarti.title.toLowerCase(),
+        aarti.marathiTitle.toLowerCase(),
+        aarti.deity.toLowerCase(),
+        aarti.composer ? aarti.composer.toLowerCase() : '',
+        'आरती', 'बोल', 'संग्रह', 'पठण', 'वंदन', 'प्रार्थना',
+        lyricsSnippet
+      ]
+    });
+  });
 
   // 2. COMPETITIONS & TALENT SHOWCASES
   const competitionEntries = [

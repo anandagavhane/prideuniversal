@@ -106,3 +106,20 @@ export interface NotificationItem {
   linkSectionId?: string;
 }
 
+export interface AartiStanza {
+  type: 'stanza' | 'chorus';
+  marathi: string[];
+  english?: string[];
+}
+
+export interface AartiItem {
+  id: string;
+  title: string;
+  marathiTitle: string;
+  deity: string;
+  composer?: string;
+  icon: string;
+  description: string;
+  stanzas: AartiStanza[];
+}
+

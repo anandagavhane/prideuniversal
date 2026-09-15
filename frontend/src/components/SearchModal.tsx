@@ -100,6 +100,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   const handleSelect = (item: SearchResultItem) => {
     onClose();
+    if (item.targetAartiId) {
+      window.dispatchEvent(new CustomEvent('select-aarti', { detail: item.targetAartiId }));
+    }
     // Allow smooth modal fade out before scrolling
     setTimeout(() => {
       onNavigateSection(item.sectionId);
