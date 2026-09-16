@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 import { AccountsData, NominationsDashboardData } from '../types';
 import { HeroCarousel } from './HeroCarousel';
 
@@ -57,19 +58,6 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
       <div className="absolute -bottom-16 -left-16 w-80 h-80 bg-orange-400/15 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-        {/* Official Society Emblem - Circular */}
-        <div className="mb-4 flex justify-center">
-          <div className="relative group">
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 rounded-full blur-md opacity-40 group-hover:opacity-75 transition duration-500"></div>
-            <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden shadow-2xl border-4 border-amber-300 ring-4 ring-amber-500/20 bg-slate-950 flex items-center justify-center p-1 group-hover:scale-105 transition-all duration-300">
-              <img 
-                src="/logo.png" 
-                alt="Pride Universal Ganeshotsav 2026 Emblem" 
-                className="w-full h-full object-contain rounded-full"
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Sacred Chanting Header */}
         <div className="inline-block animate-pulse mb-3">
