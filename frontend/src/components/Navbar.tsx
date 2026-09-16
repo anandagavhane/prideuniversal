@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     { 
       id: 'competitions', 
-      label: 'Competitions', 
+      label: 'Games & Competition', 
       marathi: 'कला व क्रीडा स्पर्धा', 
       icon: Trophy,
       desc: 'All 7 talent events, rules & competitions'
@@ -576,7 +576,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <Trophy className={`w-3.5 h-3.5 ${activeTab === 'competitions' ? 'text-amber-300' : 'text-amber-700'}`} />
-                    <span>2.2 Competitions</span>
+                    <span>2.2 Games & Competition</span>
                   </div>
                   <span className="text-[10px] text-slate-500 font-marathi">स्पर्धा व नियम</span>
                 </button>

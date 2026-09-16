@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Clock } from 'lucide-react';
 import { AccountsData, NominationsDashboardData } from '../types';
 import { HeroCarousel } from './HeroCarousel';
 
 interface HeroProps {
   onNavigate: (sectionId: string) => void;
-  accounts: AccountsData;
-  nominations: NominationsDashboardData;
+  accounts?: AccountsData;
+  nominations?: NominationsDashboardData;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onNavigate, accounts, nominations }) => {
+export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
   // Countdown to 14 September 2026, 4:00 PM IST
   const festivalTargetDate = new Date('2026-09-14T16:00:00+05:30').getTime();
   const [timeLeft, setTimeLeft] = useState<{
@@ -146,190 +145,6 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, accounts, nominations })
 
         {/* Grand Festival Highlights Image Carousel */}
         <HeroCarousel onNavigate={onNavigate} />
-
-        {/* Divine Darshan Spotlight Card */}
-        <div className="max-w-4xl mx-auto mb-12 bg-gradient-to-br from-amber-100/90 via-white to-amber-50/90 rounded-3xl p-4 sm:p-6 border-2 border-amber-300 shadow-xl overflow-hidden relative">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-            {/* Left: Framed Ganesha Photo */}
-            <div className="md:col-span-5 relative group">
-              <div className="relative rounded-2xl overflow-hidden shadow-lg border-2 border-amber-400 aspect-[4/3] bg-amber-950">
-                <img 
-                  src="/photos/memories_2025_idol_croped.jpeg" 
-                  alt="Lord Ganesha - Pride Universal Darshan" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="eager"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-2 left-3 right-3 text-left text-white">
-                  <span className="text-[11px] font-bold text-amber-300 tracking-wider uppercase block">
-                    ॥ श्री गणेशाय नमः ॥
-                  </span>
-                  <span className="text-xs font-semibold text-slate-100 font-marathi">
-                    Pride Universal Bappa Darshan
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Sacred Shloka & Blessing Text */}
-            <div className="md:col-span-7 text-left space-y-2.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-200 text-red-900 text-[11px] font-bold uppercase tracking-wider">
-                <span>🌺</span>
-                <span>DIVINE BLESSINGS & CELEBRATION</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-red-950 font-festive leading-snug">
-                मंगलमूर्ती मोरया • सुखकर्ता दुःखहर्ता
-              </h2>
-              <p className="text-xs sm:text-sm font-semibold text-amber-900 font-marathi leading-relaxed italic bg-amber-50/80 p-2.5 rounded-xl border border-amber-200">
-                वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ ।<br />
-                निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा ॥
-              </p>
-              <p className="text-xs text-slate-700 leading-relaxed font-normal">
-                Pride Universal warmly welcomes all residents and families to celebrate 12 auspicious days of devotion, cultural performances, and joyous community togetherness.
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1 text-[11px]">
-                <span className="bg-amber-200/70 text-amber-950 font-bold px-2.5 py-1 rounded-md">
-                  ✨ 14 Sep: Grand Aagaman
-                </span>
-                <span className="bg-amber-200/70 text-amber-950 font-bold px-2.5 py-1 rounded-md">
-                  🪔 Daily Aarti: 8:00 AM &amp; 7:30 PM
-                </span>
-                <span className="bg-amber-200/70 text-amber-950 font-bold px-2.5 py-1 rounded-md">
-                  🍽️ 24 Sep: Mahaprasad
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 4 Feature Cards (exact replica of Canva design buttons) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left">
-          {/* Card 1: Event Schedule */}
-          <button
-            onClick={() => onNavigate('schedule')}
-            className="group p-6 rounded-2xl bg-gradient-to-br from-[#f19a5c] to-[#f9db6f] text-red-950 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-[#fcd146] hover:-translate-y-1 focus:outline-none flex flex-col justify-between"
-          >
-            <div>
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📅</div>
-              <h3 className="text-xl font-black text-[#800020] uppercase font-festive tracking-tight leading-snug">
-                Event<br />Schedule
-              </h3>
-              <p className="text-xs text-amber-950 font-medium mt-2">
-                12 Days detailed timeline from Aagaman to Visarjan Miravnuk.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-900 group-hover:translate-x-1 transition-transform">
-              <span>View Timeline</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </button>
-
-          {/* Card 2: Games & Competitions */}
-          <button
-            onClick={() => onNavigate('competitions')}
-            className="group p-6 rounded-2xl bg-gradient-to-br from-[#f19a5c] to-[#f9db6f] text-red-950 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-[#fcd146] hover:-translate-y-1 focus:outline-none flex flex-col justify-between"
-          >
-            <div>
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🏆</div>
-              <h3 className="text-xl font-black text-[#800020] uppercase font-festive tracking-tight leading-snug">
-                Games &<br />Competition
-              </h3>
-              <p className="text-xs text-amber-950 font-medium mt-2">
-                Dance, Drawing, Singing, Shloka, Races, and Fun Challenges.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-900 group-hover:translate-x-1 transition-transform">
-              <span>Explore & Nominate</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </button>
-
-          {/* Card 3: Photo Gallery */}
-          <button
-            onClick={() => onNavigate('gallery')}
-            className="group p-6 rounded-2xl bg-gradient-to-br from-[#f19a5c] to-[#f9db6f] text-red-950 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-[#fcd146] hover:-translate-y-1 focus:outline-none flex flex-col justify-between"
-          >
-            <div>
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📸</div>
-              <h3 className="text-xl font-black text-[#800020] uppercase font-festive tracking-tight leading-snug">
-                Photo<br />Gallery
-              </h3>
-              <p className="text-xs text-amber-950 font-medium mt-2">
-                Relive memories of devotion, cultural night, and grand celebrations.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-900 group-hover:translate-x-1 transition-transform">
-              <span>View Photos</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </button>
-
-          {/* Card 4: Ganapati Celebration / Accounts */}
-          <button
-            onClick={() => onNavigate('accounts')}
-            className="group p-6 rounded-2xl bg-gradient-to-br from-[#f19a5c] to-[#f9db6f] text-red-950 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-[#fcd146] hover:-translate-y-1 focus:outline-none flex flex-col justify-between"
-          >
-            <div>
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🌺</div>
-              <h3 className="text-xl font-black text-[#800020] uppercase font-festive tracking-tight leading-snug">
-                Ganapati<br />Celebration
-              </h3>
-              <p className="text-xs text-amber-950 font-medium mt-2">
-                Live accounts ledger: Collections ({accounts?.totalCollectionsFormatted || '₹5,100'}) & Puja details.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-red-900 group-hover:translate-x-1 transition-transform">
-              <span>View Financials</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </button>
-        </div>
-
-        {/* Live Nominations & Collections Ticker */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          {/* Nominations Ticker */}
-          <div 
-            onClick={() => onNavigate('nominations')}
-            className="cursor-pointer bg-white/80 backdrop-blur rounded-xl p-4 border border-amber-300 flex items-center justify-between hover:bg-amber-50/80 transition-colors shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg">
-                🏆
-              </div>
-              <div className="text-left">
-                <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Total Nominations</span>
-                <span className="text-xl font-extrabold text-red-900 font-festive">
-                  {nominations?.totalNominations ?? 67} entries registered
-                </span>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-orange-600 flex items-center gap-0.5">
-              Dashboard <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-
-          {/* Accounts Ticker */}
-          <div 
-            onClick={() => onNavigate('accounts')}
-            className="cursor-pointer bg-white/80 backdrop-blur rounded-xl p-4 border border-amber-300 flex items-center justify-between hover:bg-amber-50/80 transition-colors shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
-                ₹
-              </div>
-              <div className="text-left">
-                <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Live Fund Collection</span>
-                <span className="text-xl font-extrabold text-emerald-800 font-festive">
-                  {accounts?.totalCollectionsFormatted || '₹5,100'}
-                </span>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-emerald-700 flex items-center gap-0.5">
-              Overview <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </div>
-
       </div>
     </section>
   );
