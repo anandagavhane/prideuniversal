@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Pause, Play, Sparkles, RefreshCw } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ChevronLeft, ChevronRight, Pause, Play, Sparkles, RefreshCw, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { fetchDriveFolderPhotos } from '../services/googleSheetsService';
 
 export interface CarouselSlide {
@@ -140,7 +141,7 @@ export const HERO_CAROUSEL_SLIDES: CarouselSlide[] = [
   },
   {
     id: 'c7',
-    imageUrl: '/photos/memories_mahaprasad1.jpeg',
+    imageUrl: '/photos/memories_mahaprasad_serve.jpeg',
     title: 'सोसायटी महाप्रसाद सोहळा (Community Mahaprasad)',
     subtitle: 'सत्यनारायण पूजेनंतर सर्व सोसायटी सदस्यांचा एकत्र स्नेहभोजन व महाप्रसाद सोहळा.',
     category: 'Mahaprasad',
@@ -173,6 +174,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
   const [imageFallbacks, setImageFallbacks] = useState<Record<string, string>>({});
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAutoZoom, setIsAutoZoom] = useState(true);
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  const [modalZoomScale, setModalZoomScale] = useState(1);
 
   const loadPhotos = useCallback(async () => {
     try {
@@ -242,6 +246,18 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
       return currentSlides;
     });
   }, []);
+
+  // Keyboard navigation when zoom modal is open
+  useEffect(() => {
+    if (!isZoomModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsZoomModalOpen(false);
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomModalOpen, handlePrev, handleNext]);
 
   // Auto-play timer management
   useEffect(() => {
@@ -327,14 +343,23 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Ambient Blurred Background of current slide */}
+        {/* Ambient Blurred Background of current slide with Auto-Zoom */}
         <div
-          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-45 scale-110 pointer-events-none transition-all duration-700"
+          className={`absolute inset-0 bg-cover bg-center blur-3xl opacity-45 pointer-events-none transition-all duration-700 ${
+            isAutoZoom ? 'animate-ambient-zoom' : 'scale-110'
+          }`}
           style={{ backgroundImage: `url('${resolvedImageUrl}')` }}
         ></div>
 
-        {/* Foreground Centered Image strictly fitted */}
-        <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-8 z-10">
+        {/* Foreground Centered Image strictly fitted with Auto-Zoom */}
+        <div 
+          className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 md:p-6 z-10 overflow-hidden cursor-zoom-in group/img"
+          onClick={() => {
+            setModalZoomScale(1);
+            setIsZoomModalOpen(true);
+          }}
+          title="मोठे करून पहा / Click to Zoom Fullscreen"
+        >
           <img
             key={`${currentSlide.id}-${imageFallbacks[currentSlide.id] || 'primary'}`}
             src={resolvedImageUrl}
@@ -342,10 +367,18 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
             referrerPolicy="no-referrer"
             onLoad={() => setIsImageLoading(false)}
             onError={handleImageError}
-            className={`w-full h-full object-contain mx-auto rounded-2xl drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300 ${
-              isImageLoading ? 'opacity-75 scale-98' : 'opacity-100 scale-100'
-            }`}
+            className={`w-full h-full object-contain mx-auto rounded-2xl drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-opacity duration-500 will-change-transform select-none ${
+              isAutoZoom ? 'animate-carousel-zoom' : ''
+            } ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
           />
+
+          {/* Hover Zoom Hint Badge */}
+          <div className="absolute top-4 right-4 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 text-amber-200 text-xs font-bold border border-amber-300/40 shadow-xl backdrop-blur-md">
+              <ZoomIn className="w-3.5 h-3.5 text-amber-300" />
+              <span>Zoom View</span>
+            </span>
+          </div>
         </div>
 
         {/* Top Floating Badges & Controls Bar */}
@@ -356,11 +389,26 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
             <span>गणेशोत्सव २०२६ थेट क्षणचित्रे • FESTIVAL 2026 LIVE</span>
           </div>
 
-          {/* Right Controls: Index Badge + Sync Button + Pause/Play */}
+          {/* Right Controls: Index Badge + Auto-Zoom Toggle + Sync Button + Pause/Play */}
           <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
             <span className="text-xs sm:text-sm text-amber-300 font-mono bg-black/80 backdrop-blur-md px-2.5 sm:px-3 py-1 rounded-full border border-amber-400/30 shadow-xl font-bold">
               {currentIndex + 1} / {activeSlides.length}
             </span>
+
+            {/* Auto-Zoom Indicator & Toggle */}
+            <button
+              onClick={() => setIsAutoZoom(prev => !prev)}
+              className={`px-2.5 py-1 rounded-full backdrop-blur-md border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xl ${
+                isAutoZoom 
+                  ? 'bg-amber-400 text-red-950 border-amber-300 font-black shadow-amber-400/20' 
+                  : 'bg-black/80 text-amber-200/80 border-amber-400/30 hover:text-white'
+              }`}
+              title={isAutoZoom ? 'Auto Zoom चालू आहे (क्लिक करून थांबवा)' : 'Auto Zoom बंद आहे (क्लिक करून चालू करा)'}
+              aria-label="Toggle Auto Zoom"
+            >
+              <ZoomIn className={`w-3.5 h-3.5 ${isAutoZoom ? 'text-red-950 animate-pulse' : 'text-amber-300'}`} />
+              <span className="hidden sm:inline">Auto Zoom</span>
+            </button>
 
             <button
               onClick={handleManualRefresh}
@@ -440,6 +488,101 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Interactive Zoom Modal */}
+      {isZoomModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between select-none p-2 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => setIsZoomModalOpen(false)}
+        >
+          {/* Header Bar */}
+          <div className="flex items-center justify-between p-2 sm:p-4 text-white z-20" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm sm:text-base font-bold text-amber-300 font-festive">
+                {currentSlide.title}
+              </span>
+              {currentSlide.badge && (
+                <span className="text-[10px] font-black bg-amber-400 text-red-950 px-2 py-0.5 rounded-full">
+                  {currentSlide.badge}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Zoom Scale Buttons */}
+              <button
+                onClick={() => setModalZoomScale(prev => Math.max(1, prev - 0.25))}
+                disabled={modalZoomScale <= 1}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white cursor-pointer transition-all"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-mono text-amber-300 min-w-10 text-center">
+                {Math.round(modalZoomScale * 100)}%
+              </span>
+              <button
+                onClick={() => setModalZoomScale(prev => Math.min(2.5, prev + 0.25))}
+                disabled={modalZoomScale >= 2.5}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white cursor-pointer transition-all"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setIsZoomModalOpen(false)}
+                className="p-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white cursor-pointer transition-all ml-2"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Central Zoomed Image */}
+          <div 
+            className="relative flex-1 flex items-center justify-center overflow-auto p-2"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={resolvedImageUrl}
+              alt={currentSlide.title}
+              className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform duration-300 select-none cursor-grab active:cursor-grabbing"
+              style={{ transform: `scale(${modalZoomScale})` }}
+              draggable={false}
+            />
+
+            {/* Modal Prev / Next */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrev();
+              }}
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-black/70 hover:bg-amber-400 hover:text-red-950 text-white transition-all shadow-2xl active:scale-95 border border-white/20 cursor-pointer"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-black/70 hover:bg-amber-400 hover:text-red-950 text-white transition-all shadow-2xl active:scale-95 border border-white/20 cursor-pointer"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Footer Bar */}
+          <div className="p-3 text-center text-xs sm:text-sm text-amber-200/90 font-marathi bg-black/60 backdrop-blur-md rounded-xl max-w-2xl mx-auto mb-2" onClick={e => e.stopPropagation()}>
+            {currentSlide.subtitle}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

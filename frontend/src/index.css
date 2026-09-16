@@ -50,3 +50,35 @@
   animation: shimmer 3s infinite;
 }
 
+/* Home Carousel Photo Auto-Zoom Animation (Cinematic Ken Burns Effect) */
+@keyframes carouselAutoZoom {
+  0% {
+    transform: scale(1.0);
+  }
+  100% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes ambientAutoZoom {
+  0% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1.22);
+  }
+}
+
+.animate-carousel-zoom {
+  animation: carouselAutoZoom 6.5s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.animate-ambient-zoom {
+  animation: ambientAutoZoom 6.5s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+
