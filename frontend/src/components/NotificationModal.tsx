@@ -9,7 +9,9 @@ import {
   Calendar, 
   ExternalLink,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Download,
+  ChevronRight
 } from 'lucide-react';
 import { NotificationItem } from '../types';
 import { requestAllNotificationPermissions } from '../services/nativeNotificationService';
@@ -20,7 +22,7 @@ interface NotificationModalProps {
   notifications: NotificationItem[];
   readIds: string[];
   onMarkAllAsRead: () => void;
-  onNavigate: (sectionId: string) => void;
+  onNavigate: (sectionId: string, linkText?: string) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -227,18 +229,49 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                     {item.message}
                   </p>
 
-                  {item.linkText && item.linkSectionId && (
-                    <button
-                      onClick={() => {
-                        onNavigate(item.linkSectionId!);
-                        onClose();
-                      }}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-red-800 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 transition-transform active:scale-95"
-                    >
-                      <span>{item.linkText}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  {(() => {
+                    const rawLink = item.linkSectionId || (
+                      item.linkText?.toLowerCase().endsWith('.apk') || 
+                      item.linkText?.startsWith('http') || 
+                      ['update', 'download', 'apk', 'schedule', 'competitions', 'nominations', 'accounts', 'aarti', 'gallery', 'committee', 'sponsors'].includes(item.linkText?.toLowerCase() || '') 
+                        ? item.linkText 
+                        : undefined
+                    );
+                    if (!rawLink && !item.linkText) return null;
+
+                    const linkTarget = (rawLink || item.linkText || '').trim();
+                    const lowerTarget = linkTarget.toLowerCase();
+                    const isApk = lowerTarget.endsWith('.apk') || 
+                      lowerTarget === 'update' || 
+                      lowerTarget === 'download' || 
+                      lowerTarget === 'apk' ||
+                      (item.linkText && item.linkText.toLowerCase().endsWith('.apk'));
+                    const isExternal = /^(https?:\/\/)/i.test(linkTarget);
+                    const displayLabel = item.linkText || (isApk ? 'Download App (APK)' : isExternal ? 'Open Link' : 'View Details');
+
+                    return (
+                      <button
+                        onClick={() => {
+                          onNavigate(linkTarget, displayLabel);
+                          onClose();
+                        }}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 shadow-xs cursor-pointer ${
+                          isApk 
+                            ? 'bg-gradient-to-r from-red-800 to-red-950 hover:brightness-110 text-amber-200 border-amber-400 ring-1 ring-amber-300/50' 
+                            : 'bg-amber-100 hover:bg-amber-200 text-red-900 border-amber-300'
+                        }`}
+                      >
+                        <span>{displayLabel}</span>
+                        {isApk ? (
+                          <Download className="w-3.5 h-3.5 text-amber-300" />
+                        ) : isExternal ? (
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               );
             })

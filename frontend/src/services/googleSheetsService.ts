@@ -743,7 +743,8 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
         const active = !['no', 'false', '0', 'बंद', 'नाही'].includes(rawActive);
 
         const linkText = cols[linkTextIdx] ? cols[linkTextIdx].trim() : undefined;
-        const linkSectionId = cols[linkSecIdx] ? cols[linkSecIdx].trim().toLowerCase() : undefined;
+        const rawLinkSec = cols[linkSecIdx] ? cols[linkSecIdx].trim() : undefined;
+        const linkSectionId = rawLinkSec && !/^(https?:\/\/)/i.test(rawLinkSec) ? rawLinkSec.toLowerCase() : rawLinkSec;
 
         // Content-aware unique ID so that any added or updated message in Google Sheets is immediately detected as new
         const cleanSignature = `${title}_${message}_${date}`.replace(/\s+/g, '_').slice(0, 36);

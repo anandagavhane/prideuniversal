@@ -220,17 +220,81 @@ export function App() {
     n => n.active && !readNotificationIds.includes(n.id)
   ).length;
 
-  const handleNavigate = (sectionId: string) => {
-    setActiveTab(sectionId);
-    if (sectionId === 'home') {
+  const handleNavigate = (target: string, linkText?: string) => {
+    if (!target) return;
+    const cleanTarget = target.trim();
+    const lower = cleanTarget.toLowerCase();
+
+    // 1. External Links (http://, https://, mailto:, tel:)
+    if (/^(https?:\/\/|mailto:|tel:)/i.test(cleanTarget)) {
+      window.open(cleanTarget, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 2. Direct APK Downloads / App Updates
+    const isApkTarget = 
+      lower.endsWith('.apk') || 
+      lower === 'update' || 
+      lower === 'download' || 
+      lower === 'apk' || 
+      lower === 'latest-apk' ||
+      lower === 'app-update' ||
+      (linkText && linkText.toLowerCase().endsWith('.apk'));
+
+    if (isApkTarget) {
+      let apkFile = 'PrideFestival-Latest.apk';
+      if (lower.endsWith('.apk')) {
+        apkFile = cleanTarget;
+      } else if (linkText && linkText.toLowerCase().endsWith('.apk')) {
+        apkFile = linkText.trim();
+      }
+
+      const downloadUrl = `/${apkFile}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = apkFile;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // 3. Home Section
+    if (lower === 'home') {
+      setActiveTab('home');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const targetId = 
-      (sectionId === 'events' || sectionId === 'schedule' || sectionId === 'schedules') ? 'schedule' : 
-      sectionId === 'emcees' ? 'selected-emcees' : 
-      sectionId;
-    const element = document.getElementById(targetId) || document.getElementById(sectionId);
+
+    // 4. Section mapping & smooth scroll
+    let targetId = lower;
+    if (['events', 'schedule', 'schedules', 'vegapathrak'].includes(lower)) {
+      targetId = 'schedule';
+    } else if (['emcee', 'emcees', 'anchors', 'selected-emcees'].includes(lower)) {
+      targetId = 'selected-emcees';
+    } else if (['winner', 'winners', 'vijete'].includes(lower)) {
+      targetId = 'winners';
+    } else if (['competition', 'competitions', 'games', 'spardha'].includes(lower)) {
+      targetId = 'competitions';
+    } else if (['nomination', 'nominations', 'nondani'].includes(lower)) {
+      targetId = 'nominations';
+    } else if (['account', 'accounts', 'jamakharch'].includes(lower)) {
+      targetId = 'accounts';
+    } else if (['aarti', 'aarati', 'daily-aarti'].includes(lower)) {
+      targetId = 'aarti';
+    } else if (['gallery', 'memories', 'photos', 'chitrashala'].includes(lower)) {
+      targetId = 'gallery';
+    } else if (['committee', 'samiti', 'contacts'].includes(lower)) {
+      targetId = 'committee';
+    } else if (['decoration', 'mandap', 'temple', 'temple-decoration'].includes(lower)) {
+      targetId = 'temple-decoration';
+    } else if (['sponsor', 'sponsors', 'official-sponsors', 'prayogak'].includes(lower)) {
+      targetId = 'sponsors';
+    }
+
+    setActiveTab(targetId);
+    const element = document.getElementById(targetId) || document.getElementById(cleanTarget);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Phone, ExternalLink, ChevronLeft, ChevronRight, Sparkles, Megaphone, RefreshCw, X, ZoomIn } from 'lucide-react';
+import { Phone, ExternalLink, ChevronLeft, ChevronRight, Sparkles, Megaphone, RefreshCw, X, ZoomIn, Download } from 'lucide-react';
 import { SponsorAd, DEFAULT_SPONSOR_ADS } from '../services/adService';
 
 interface SponsorAdBannerProps {
@@ -144,7 +144,8 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
   // 2. MID-PAGE SHOWCASE VARIANT (Between Schedule & Competitions)
   return (
     <section 
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-10"
+      id="sponsors"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-10 scroll-mt-24"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -166,6 +167,17 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+            {/* Direct APK Download CTA */}
+            <a
+              href="/PrideFestival-Latest.apk"
+              download="PrideFestival-Latest.apk"
+              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-gradient-to-r from-red-800 to-red-950 text-amber-200 hover:brightness-110 border border-amber-300 shadow-sm transition-all hover:scale-105"
+              title="Download latest Android APK (v1.1.0)"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-300" />
+              <span>Download App (APK)</span>
+            </a>
+
             {/* Stepper Buttons */}
             {activeAds.length > 1 && (
               <div className="flex items-center gap-1 bg-white/70 border border-amber-300/80 rounded-lg p-0.5 shadow-2xs">

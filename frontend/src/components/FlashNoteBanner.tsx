@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bell, ChevronRight, ChevronLeft, X, Sparkles, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
+import { Bell, ChevronRight, ChevronLeft, X, Sparkles, AlertTriangle, Calendar, RefreshCw, Download, ExternalLink } from 'lucide-react';
 import { NotificationItem } from '../types';
 
 interface FlashNoteBannerProps {
-  onNavigate: (sectionId: string) => void;
+  onNavigate: (sectionId: string, linkText?: string) => void;
   notifications?: NotificationItem[];
   onOpenNotifications?: () => void;
 }
@@ -118,15 +118,42 @@ export const FlashNoteBanner: React.FC<FlashNoteBannerProps> = ({
             </div>
           )}
 
-          {currentNotif.linkText && currentNotif.linkSectionId && (
-            <button
-              onClick={() => onNavigate(currentNotif.linkSectionId!)}
-              className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-red-950 px-3 py-1 rounded-lg shadow transition-all hover:scale-105 cursor-pointer"
-            >
-              <span>{currentNotif.linkText}</span>
-              <ChevronRight className="w-3.5 h-3.5 text-red-950" />
-            </button>
-          )}
+          {(() => {
+            const rawLink = currentNotif.linkSectionId || (
+              currentNotif.linkText?.toLowerCase().endsWith('.apk') || 
+              currentNotif.linkText?.startsWith('http') || 
+              ['update', 'download', 'apk', 'schedule', 'competitions', 'nominations', 'accounts', 'aarti', 'gallery', 'committee', 'sponsors'].includes(currentNotif.linkText?.toLowerCase() || '') 
+                ? currentNotif.linkText 
+                : undefined
+            );
+            if (!rawLink && !currentNotif.linkText) return null;
+
+            const linkTarget = (rawLink || currentNotif.linkText || '').trim();
+            const lowerTarget = linkTarget.toLowerCase();
+            const isApk = lowerTarget.endsWith('.apk') || 
+              lowerTarget === 'update' || 
+              lowerTarget === 'download' || 
+              lowerTarget === 'apk' ||
+              (currentNotif.linkText && currentNotif.linkText.toLowerCase().endsWith('.apk'));
+            const isExternal = /^(https?:\/\/)/i.test(linkTarget);
+            const displayLabel = currentNotif.linkText || (isApk ? 'Download App (APK)' : isExternal ? 'Open Link' : 'View Details');
+
+            return (
+              <button
+                onClick={() => onNavigate(linkTarget, displayLabel)}
+                className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-red-950 px-3 py-1 rounded-lg shadow transition-all hover:scale-105 cursor-pointer"
+              >
+                <span>{displayLabel}</span>
+                {isApk ? (
+                  <Download className="w-3.5 h-3.5 text-red-950" />
+                ) : isExternal ? (
+                  <ExternalLink className="w-3.5 h-3.5 text-red-950" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-red-950" />
+                )}
+              </button>
+            );
+          })()}
 
           {onOpenNotifications && (
             <button
