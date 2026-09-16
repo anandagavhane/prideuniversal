@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Calendar, Trophy, BarChart3, Flame, ArrowUp, ArrowDown, Phone } from 'lucide-react';
+import { APP_VERSION, APP_BUILD } from '../version';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
@@ -150,8 +151,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <span className="text-center sm:text-right">© 2026 Pride Universal Society • All Rights Reserved</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-700">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <span>© 2026 Pride Universal Society • All Rights Reserved</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-200/90 border border-amber-300 font-mono text-[11px] text-red-950 font-bold shadow-2xs">
+                v{APP_VERSION} (Build {APP_BUILD})
+              </span>
+            </div>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={scrollToTop}

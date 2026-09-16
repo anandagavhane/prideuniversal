@@ -21,6 +21,7 @@ import {
   Search,
   ChevronDown
 } from 'lucide-react';
+import { APP_VERSION, APP_BUILD } from '../version';
 
 interface NavbarProps {
   activeTab: string;
@@ -706,6 +707,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Submit Nomination</span>
             </a>
           )}
+
+          <div className="pt-2 pb-1 text-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/90 border border-amber-300 font-mono text-[10px] text-amber-900 font-bold">
+              <span>Pride Universal</span>
+              <span>•</span>
+              <span>v{APP_VERSION} (Build {APP_BUILD})</span>
+            </span>
+          </div>
         </div>
       )}
     </header>
