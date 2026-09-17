@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def currentVersionCode = 2
-def currentVersionName = "1.1.0"
+def currentVersionCode = 3
+def currentVersionName = "1.2.0"
 
 android {
     namespace = "com.myapp.android"
