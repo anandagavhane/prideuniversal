@@ -1,24 +1,21 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Navbar } from './components/Navbar';
 import { FlashNoteBanner } from './components/FlashNoteBanner';
 import { Hero } from './components/Hero';
 import { ScheduleSection } from './components/ScheduleSection';
 import { CompetitionsSection } from './components/CompetitionsSection';
-import { WinnersSection } from './components/WinnersSection';
-import { NominationsDashboard } from './components/NominationsDashboard';
-import { AccountsSection } from './components/AccountsSection';
-import { AartiSection } from './components/AartiSection';
 import { TempleDecorationSection } from './components/TempleDecorationSection';
-import { GallerySection } from './components/GallerySection';
 import { CommitteeSection } from './components/CommitteeSection';
-import { VideoModal } from './components/VideoModal';
 import { NotificationModal } from './components/NotificationModal';
+import { NominationFormModal } from './components/NominationFormModal';
 import { LiveTimeAlertBanner } from './components/LiveTimeAlertBanner';
-import { SearchModal } from './components/SearchModal';
 import { SponsorAdBanner } from './components/SponsorAdBanner';
 import { StickyBottomAd } from './components/StickyBottomAd';
 import { Footer } from './components/Footer';
 import { ScrollNavigation } from './components/ScrollNavigation';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+import { getLocalNominations, mergeParticipantsWithLocalNominations, NominationFormEntry, normalizeCategory, isExcludedCategory } from './services/nominationService';
 import { fetchSponsorAds, SponsorAd, DEFAULT_SPONSOR_ADS } from './services/adService';
 import { Capacitor } from '@capacitor/core';
 import { 
@@ -29,6 +26,7 @@ import {
   fetchFestivalSchedule,
   fetchSelectedEmcees,
   fetchCompetitionWinners,
+  fetchCompetitionParticipants,
   DecorationSlide,
   DEFAULT_DECORATION_SLIDES
 } from './services/googleSheetsService';
@@ -37,21 +35,164 @@ import {
   initializeNotificationChannels,
   requestAllNotificationPermissions
 } from './services/nativeNotificationService';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS } from './data/fallbackData';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS, FALLBACK_COMPETITION_PARTICIPANTS } from './data/fallbackData';
 import { FESTIVAL_SCHEDULE } from './data/scheduleData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from './types';
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner, CompetitionParticipant } from './types';
+
+// Code-split heavy & off-screen components via React.lazy
+const WinnersSection = lazy(() => import('./components/WinnersSection').then(m => ({ default: m.WinnersSection })));
+const NominationsDashboard = lazy(() => import('./components/NominationsDashboard').then(m => ({ default: m.NominationsDashboard })));
+const AccountsSection = lazy(() => import('./components/AccountsSection').then(m => ({ default: m.AccountsSection })));
+const AartiSection = lazy(() => import('./components/AartiSection').then(m => ({ default: m.AartiSection })));
+const GallerySection = lazy(() => import('./components/GallerySection').then(m => ({ default: m.GallerySection })));
+const VideoModal = lazy(() => import('./components/VideoModal').then(m => ({ default: m.VideoModal })));
+const SearchModal = lazy(() => import('./components/SearchModal').then(m => ({ default: m.SearchModal })));
+
+function SectionSkeleton({ title }: { title?: string }) {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse">
+      <div className="h-7 bg-amber-200/50 rounded-xl w-56 mx-auto mb-4"></div>
+      <div className="h-4 bg-amber-100/70 rounded-lg w-80 max-w-full mx-auto mb-8"></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="h-36 bg-amber-100/40 rounded-2xl border border-amber-200/30"></div>
+        <div className="h-36 bg-amber-100/40 rounded-2xl border border-amber-200/30"></div>
+        <div className="h-36 bg-amber-100/40 rounded-2xl border border-amber-200/30"></div>
+      </div>
+      {title && (
+        <p className="text-center text-xs font-semibold text-amber-900/50 mt-4 font-marathi">
+          {title} लोड होत आहे... (Loading...)
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [accounts, setAccounts] = useState<AccountsData>(FALLBACK_ACCOUNTS_DATA);
   const [nominations, setNominations] = useState<NominationsDashboardData>(FALLBACK_NOMINATIONS_DATA);
   const [notifications, setNotifications] = useState<NotificationItem[]>(FALLBACK_NOTIFICATIONS);
-  const [schedule, setSchedule] = useState<EventItem[]>(FESTIVAL_SCHEDULE);
+  const [schedule, setSchedule] = useState<EventItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cached_festival_schedule');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading cached_festival_schedule:', e);
+      }
+    }
+    return FESTIVAL_SCHEDULE;
+  });
   const [scheduleLastUpdated, setScheduleLastUpdated] = useState<string>('');
   const [selectedEmcees, setSelectedEmcees] = useState<SelectedEmcee[]>(FALLBACK_SELECTED_EMCEES);
   const [emceesLastUpdated, setEmceesLastUpdated] = useState<string>('');
   const [winners, setWinners] = useState<CompetitionWinner[]>(FALLBACK_WINNERS);
   const [winnersLastUpdated, setWinnersLastUpdated] = useState<string>('');
+  const [competitionParticipants, setCompetitionParticipants] = useState<CompetitionParticipant[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cached_competition_participants');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading cached_competition_participants:', e);
+      }
+    }
+    return FALLBACK_COMPETITION_PARTICIPANTS;
+  });
+
+  // Local user-submitted nominations (persisted in localStorage and exportable to Excel)
+  const [localNominations, setLocalNominations] = useState<NominationFormEntry[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getLocalNominations();
+    }
+    return [];
+  });
+  const [isNominationModalOpen, setIsNominationModalOpen] = useState<boolean>(false);
+  const [selectedCategoryForNomination, setSelectedCategoryForNomination] = useState<string | undefined>(undefined);
+
+  const handleOpenNominationModal = useCallback((category?: string) => {
+    setSelectedCategoryForNomination(category);
+    setIsNominationModalOpen(true);
+  }, []);
+
+  const handleNominationAdded = useCallback((newEntry: NominationFormEntry) => {
+    setLocalNominations(prev => [newEntry, ...prev]);
+  }, []);
+
+  // Merge base Google Sheet participants with locally registered entries
+  const allMergedParticipants = useMemo(() => {
+    return mergeParticipantsWithLocalNominations(competitionParticipants, localNominations);
+  }, [competitionParticipants, localNominations]);
+
+  // Dynamically compute nominations statistics directly from allMergedParticipants (Google Sheets roster + local entries)
+  const computedNominations = useMemo<NominationsDashboardData>(() => {
+    if (!allMergedParticipants || allMergedParticipants.length === 0) {
+      return nominations;
+    }
+    const validParticipants = allMergedParticipants.filter(p => !isExcludedCategory(p.eventCategory));
+    const total = validParticipants.length;
+    const wingA = validParticipants.filter(p => (p.wing || '').trim().toUpperCase() === 'A').length;
+    const wingB = validParticipants.filter(p => (p.wing || '').trim().toUpperCase() === 'B').length;
+    const wingAPercent = total > 0 ? `${((wingA / total) * 100).toFixed(1)}%` : '0%';
+    const wingBPercent = total > 0 ? `${((wingB / total) * 100).toFixed(1)}%` : '0%';
+
+    const iconMap: Record<string, string> = {
+      'Dance': '💃',
+      'Drawing': '🎨',
+      'Singing': '🎤',
+      'Shloka': '📖',
+      'Piano Play': '🎹',
+      'Emcee / Host': '⭐',
+      'Emcee Nomination': '⭐',
+      'Drama': '🎭',
+      'Fashion Show': '✨',
+      'Cooking': '🍲',
+      'Rangoli': '🌸'
+    };
+    (nominations.categories || []).forEach(c => {
+      if (isExcludedCategory(c.category)) return;
+      const norm = normalizeCategory(c.category);
+      if (c.icon) iconMap[norm] = c.icon;
+    });
+
+    const catMap = new Map<string, { total: number; wingA: number; wingB: number }>();
+    for (const p of validParticipants) {
+      const cat = normalizeCategory(p.eventCategory);
+      const ex = catMap.get(cat) || { total: 0, wingA: 0, wingB: 0 };
+      ex.total += 1;
+      const w = (p.wing || '').trim().toUpperCase();
+      if (w === 'A') ex.wingA += 1;
+      else if (w === 'B') ex.wingB += 1;
+      catMap.set(cat, ex);
+    }
+
+    const categories: NominationCategoryStat[] = Array.from(catMap.entries()).map(([cat, counts]) => ({
+      category: cat,
+      nominations: counts.total,
+      wingA: counts.wingA,
+      wingB: counts.wingB,
+      percentOfTotal: total > 0 ? `${((counts.total / total) * 100).toFixed(1)}%` : '0%',
+      icon: iconMap[cat] || '🏆'
+    })).sort((a, b) => b.nominations - a.nominations);
+
+    return {
+      totalNominations: total,
+      totalCategories: categories.length,
+      wingATotal: wingA,
+      wingBTotal: wingB,
+      wingAPercent,
+      wingBPercent,
+      categories,
+      lastUpdated: nominations.lastUpdated || 'Live Sync',
+      isLive: nominations.isLive ?? true
+    };
+  }, [allMergedParticipants, nominations]);
   const [sponsorAds, setSponsorAds] = useState<SponsorAd[]>(DEFAULT_SPONSOR_ADS);
   const [decorationSlides, setDecorationSlides] = useState<DecorationSlide[]>(DEFAULT_DECORATION_SLIDES);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState<boolean>(false);
@@ -84,7 +225,7 @@ export function App() {
   const loadSheetsData = useCallback(async (showLoading = false) => {
     if (showLoading) setIsRefreshing(true);
     try {
-      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes, emceesRes, winnersRes] = await Promise.allSettled([
+      const [accRes, nomsRes, notifsRes, adsRes, decorRes, schedRes, emceesRes, winnersRes, partsRes] = await Promise.allSettled([
         fetchAccountsData(),
         fetchNominationsData(),
         fetchNotificationsData(),
@@ -92,7 +233,8 @@ export function App() {
         fetchTempleDecorationSlides(),
         fetchFestivalSchedule(),
         fetchSelectedEmcees(),
-        fetchCompetitionWinners()
+        fetchCompetitionWinners(),
+        fetchCompetitionParticipants()
       ]);
 
       if (accRes.status === 'fulfilled') setAccounts(accRes.value);
@@ -122,6 +264,13 @@ export function App() {
       if (schedRes.status === 'fulfilled' && schedRes.value && schedRes.value.length > 0) {
         setSchedule(schedRes.value);
         setScheduleLastUpdated(timeStr);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('cached_festival_schedule', JSON.stringify(schedRes.value));
+          } catch (e) {
+            // ignore
+          }
+        }
       }
       if (emceesRes.status === 'fulfilled' && emceesRes.value && emceesRes.value.length > 0) {
         setSelectedEmcees(emceesRes.value);
@@ -130,6 +279,16 @@ export function App() {
       if (winnersRes.status === 'fulfilled' && winnersRes.value && winnersRes.value.length > 0) {
         setWinners(winnersRes.value);
         setWinnersLastUpdated(timeStr);
+      }
+      if (partsRes.status === 'fulfilled' && partsRes.value && partsRes.value.length > 0) {
+        setCompetitionParticipants(partsRes.value);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('cached_competition_participants', JSON.stringify(partsRes.value));
+          } catch (e) {
+            // ignore
+          }
+        }
       }
       setLastSyncNotice(`Live data updated at ${timeStr}`);
       setTimeout(() => setLastSyncNotice(''), 3500);
@@ -220,38 +379,37 @@ export function App() {
     n => n.active && !readNotificationIds.includes(n.id)
   ).length;
 
-  const handleNavigate = (target: string, linkText?: string) => {
-    if (!target) return;
-    const cleanTarget = target.trim();
+  const handleNavigate = (target: string, linkText?: string, linkUrl?: string) => {
+    if (!target && !linkUrl) return;
+    const cleanTarget = (target || '').trim();
     const lower = cleanTarget.toLowerCase();
+    const cleanUrl = (linkUrl || '').trim();
 
-    // 1. External Links (http://, https://, mailto:, tel:)
-    if (/^(https?:\/\/|mailto:|tel:)/i.test(cleanTarget)) {
-      window.open(cleanTarget, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // 2. Direct APK Downloads / App Updates
-    const isApkTarget = 
-      lower.endsWith('.apk') || 
-      lower === 'update' || 
-      lower === 'download' || 
-      lower === 'apk' || 
-      lower === 'latest-apk' ||
-      lower === 'app-update' ||
-      (linkText && linkText.toLowerCase().endsWith('.apk'));
-
-    if (isApkTarget) {
-      let apkFile = 'PrideFestival-Latest.apk';
-      if (lower.endsWith('.apk')) {
-        apkFile = cleanTarget;
-      } else if (linkText && linkText.toLowerCase().endsWith('.apk')) {
-        apkFile = linkText.trim();
+    // 1. Explicit Download Action (Link Section = "Download" / "Update")
+    if (lower === 'download' || lower === 'update') {
+      const downloadTarget = cleanUrl || (linkText && /^https?:\/\//i.test(linkText) ? linkText.trim() : '');
+      if (downloadTarget) {
+        // Convert Google Drive view URL to direct export download if needed
+        const driveMatch = downloadTarget.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        let directUrl = downloadTarget;
+        if (driveMatch && driveMatch[1]) {
+          directUrl = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+        }
+        const link = document.createElement('a');
+        link.href = directUrl;
+        link.download = 'PrideFestival-Latest.apk';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
       }
 
-      const downloadUrl = `/${apkFile}`;
+      // Fallback: download local APK
+      const apkFile = 'PrideFestival-Latest.apk';
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = `/${apkFile}`;
       link.download = apkFile;
       link.target = '_blank';
       document.body.appendChild(link);
@@ -260,19 +418,55 @@ export function App() {
       return;
     }
 
-    // 3. Home Section
+    // 2. Explicit Open Action (Link Section = "Open")
+    if (lower === 'open') {
+      const openTarget = cleanUrl || (linkText && /^https?:\/\//i.test(linkText) ? linkText.trim() : '');
+      if (openTarget) {
+        window.open(openTarget, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    }
+
+    // 3. Direct URL target (http://, https://, mailto:, tel:)
+    if (/^(https?:\/\/|mailto:|tel:)/i.test(cleanTarget)) {
+      window.open(cleanTarget, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 4. Known section mapping
+    const knownSections = [
+      'home', 'schedule', 'events', 'schedules', 'vegapathrak',
+      'selected-emcees', 'emcee', 'emcees', 'anchors',
+      'winners', 'winner', 'vijete',
+      'competitions', 'competition', 'games', 'spardha',
+      'nominations', 'nomination', 'nondani',
+      'accounts', 'account', 'jamakharch',
+      'aarti', 'aarati', 'daily-aarti',
+      'gallery', 'memories', 'photos', 'chitrashala',
+      'committee', 'samiti', 'contacts',
+      'temple-decoration', 'decoration', 'mandap', 'temple',
+      'sponsors', 'sponsor', 'official-sponsors', 'prayogak'
+    ];
+
+    // If a cleanUrl was provided and target is not a known in-app section, open the URL
+    if (cleanUrl && !knownSections.includes(lower)) {
+      window.open(cleanUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 5. Home Section
     if (lower === 'home') {
       setActiveTab('home');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // 4. Section mapping & smooth scroll
+    // 6. Section mapping & smooth scroll
     let targetId = lower;
     if (['events', 'schedule', 'schedules', 'vegapathrak'].includes(lower)) {
       targetId = 'schedule';
     } else if (['emcee', 'emcees', 'anchors', 'selected-emcees'].includes(lower)) {
-      targetId = 'selected-emcees';
+      targetId = 'competitions';
     } else if (['winner', 'winners', 'vijete'].includes(lower)) {
       targetId = 'winners';
     } else if (['competition', 'competitions', 'games', 'spardha'].includes(lower)) {
@@ -308,10 +502,9 @@ export function App() {
         setActiveTab={handleNavigate}
         onRefresh={() => loadSheetsData(true)}
         isRefreshing={isRefreshing}
-        isLive={accounts.isLive || nominations.isLive}
-        lastUpdated={accounts.lastUpdated || nominations.lastUpdated}
-        totalNominations={nominations.totalNominations}
-        selectedEmceesCount={selectedEmcees.filter(e => e.status.toLowerCase() === 'selected').length}
+        isLive={accounts.isLive || computedNominations.isLive}
+        lastUpdated={accounts.lastUpdated || computedNominations.lastUpdated}
+        totalNominations={computedNominations.totalNominations}
         autoSyncEnabled={autoSyncEnabled}
         toggleAutoSync={() => setAutoSyncEnabled(prev => !prev)}
         syncCountdown={syncCountdown}
@@ -347,10 +540,11 @@ export function App() {
         <Hero
           onNavigate={handleNavigate}
           accounts={accounts}
-          nominations={nominations}
+          nominations={computedNominations}
+          schedule={schedule}
         />
 
-        {/* उत्सव अधिकृत प्रायोजक / Official Festival Sponsor Showcase */}
+        {/* उत्सव विशेष जाहिराती / Festival Special Advertisements Showcase */}
         <SponsorAdBanner 
           variant="mid" 
           ads={sponsorAds}
@@ -359,63 +553,95 @@ export function App() {
           isRefreshing={isRefreshing}
         />
 
-        {/* GANAPATI TEMPLE & MANDAP DECORATION */}
-        <TempleDecorationSection 
-          slides={decorationSlides}
-          onRefresh={() => loadSheetsData(true)}
-          isRefreshing={isRefreshing}
-        />
+        {/* FESTIVAL LIVE PHOTOS & VIDEOS SHOWCASE */}
+        <ErrorBoundary sectionName="थेट उत्सव क्षणचित्रे व व्हिडिओ (Live Festival Moments & Videos)">
+          <TempleDecorationSection 
+            slides={decorationSlides}
+            onRefresh={() => loadSheetsData(true)}
+            isRefreshing={isRefreshing}
+          />
+        </ErrorBoundary>
 
         {/* 12-Day Event Schedule */}
-        <ScheduleSection 
-          scheduleData={schedule}
-          isLoading={isRefreshing}
-          onRefresh={() => loadSheetsData(true)}
-          lastUpdated={scheduleLastUpdated}
-        />
+        <ErrorBoundary sectionName="उत्सव दिनदर्शिका व कार्यक्रम (Festival Schedule)">
+          <ScheduleSection 
+            scheduleData={schedule}
+            isLoading={isRefreshing}
+            onRefresh={() => loadSheetsData(true)}
+            lastUpdated={scheduleLastUpdated}
+          />
+        </ErrorBoundary>
 
         {/* Games, Competitions & Cultural Programs */}
-        <CompetitionsSection
-          onOpenVideo={() => setIsVideoModalOpen(true)}
-          onNavigateToNominations={() => handleNavigate('nominations')}
-          totalNominations={nominations.totalNominations}
-          winners={winners}
-        />
+        <ErrorBoundary sectionName="स्पर्धा व सांस्कृतिक कार्यक्रम (Competitions)">
+          <CompetitionsSection
+            onOpenVideo={() => setIsVideoModalOpen(true)}
+            onNavigateToNominations={() => handleNavigate('nominations')}
+            totalNominations={allMergedParticipants.length}
+            winners={winners}
+            participants={allMergedParticipants}
+            onOpenNominationModal={handleOpenNominationModal}
+          />
+        </ErrorBoundary>
 
         {/* 🏆 Official Festival Competition Winners (Google Sheets Datasource) */}
-        <WinnersSection
-          winners={winners}
-          onRefresh={() => loadSheetsData(true)}
-          isLoading={isRefreshing}
-          lastUpdated={winnersLastUpdated}
-        />
+        <ErrorBoundary sectionName="स्पर्धा विजेते (Winners)">
+          <Suspense fallback={<SectionSkeleton title="स्पर्धा विजेते" />}>
+            <WinnersSection
+              winners={winners}
+              onRefresh={() => loadSheetsData(true)}
+              isLoading={isRefreshing}
+              lastUpdated={winnersLastUpdated}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Live Nominations Dashboard (Google Sheets Datasource) */}
-        <NominationsDashboard
-          data={nominations}
-          onRefresh={() => loadSheetsData(true)}
-          isRefreshing={isRefreshing}
-          syncCountdown={autoSyncEnabled ? syncCountdown : undefined}
-          selectedEmcees={selectedEmcees}
-          emceesLastUpdated={emceesLastUpdated}
-        />
+        <ErrorBoundary sectionName="नोंदणी डॅशबोर्ड (Nominations Dashboard)">
+          <Suspense fallback={<SectionSkeleton title="नोंदणी डॅशबोर्ड" />}>
+            <NominationsDashboard
+              data={computedNominations}
+              onRefresh={() => loadSheetsData(true)}
+              isRefreshing={isRefreshing}
+              syncCountdown={autoSyncEnabled ? syncCountdown : undefined}
+              selectedEmcees={selectedEmcees}
+              emceesLastUpdated={emceesLastUpdated}
+              participants={allMergedParticipants}
+              onOpenNominationModal={handleOpenNominationModal}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Accounts & Finance Overview (Google Sheets Datasource) */}
-        <AccountsSection
-          data={accounts}
-          onRefresh={() => loadSheetsData(true)}
-          isRefreshing={isRefreshing}
-          syncCountdown={autoSyncEnabled ? syncCountdown : undefined}
-        />
+        <ErrorBoundary sectionName="हिशोब व देणगी (Accounts & Finance)">
+          <Suspense fallback={<SectionSkeleton title="हिशोब व देणगी" />}>
+            <AccountsSection
+              data={accounts}
+              onRefresh={() => loadSheetsData(true)}
+              isRefreshing={isRefreshing}
+              syncCountdown={autoSyncEnabled ? syncCountdown : undefined}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Daily Aarti Schedule */}
-        <AartiSection />
+        <ErrorBoundary sectionName="आरती संग्रह (Aarti Collection)">
+          <Suspense fallback={<SectionSkeleton title="आरती संग्रह" />}>
+            <AartiSection />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Photo Gallery / Memories */}
-        <GallerySection />
+        <ErrorBoundary sectionName="छायाचित्रे दालन (Photo Gallery)">
+          <Suspense fallback={<SectionSkeleton title="छायाचित्रे दालन" />}>
+            <GallerySection />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Organizing Committee & Contacts */}
-        <CommitteeSection />
+        <ErrorBoundary sectionName="उत्सव समिती व संपर्क (Organizing Committee)">
+          <CommitteeSection />
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}
@@ -425,10 +651,16 @@ export function App() {
       <ScrollNavigation />
 
       {/* Dance Video Showcase Modal */}
-      <VideoModal
-        isOpen={isVideoModalOpen}
-        onClose={() => setIsVideoModalOpen(false)}
-      />
+      {isVideoModalOpen && (
+        <ErrorBoundary sectionName="व्हिडिओ शोकेस (Video Showcase)">
+          <Suspense fallback={null}>
+            <VideoModal
+              isOpen={isVideoModalOpen}
+              onClose={() => setIsVideoModalOpen(false)}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* Announcements & Notifications Modal */}
       <NotificationModal
@@ -443,16 +675,33 @@ export function App() {
       />
 
       {/* Global Festival Search Modal */}
-      <SearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        accounts={accounts}
-        notifications={notifications}
-        nominations={nominations}
-        schedule={schedule}
-        selectedEmcees={selectedEmcees}
-        winners={winners}
-        onNavigateSection={handleNavigate}
+      {isSearchOpen && (
+        <ErrorBoundary sectionName="शोध (Search)">
+          <Suspense fallback={null}>
+            <SearchModal
+              isOpen={isSearchOpen}
+              onClose={() => setIsSearchOpen(false)}
+              accounts={accounts}
+              notifications={notifications}
+              nominations={computedNominations}
+              schedule={schedule}
+              selectedEmcees={selectedEmcees}
+              winners={winners}
+              participants={allMergedParticipants}
+              onNavigateSection={handleNavigate}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {/* Interactive Festival Nomination Registration & Excel Export Modal */}
+      <NominationFormModal
+        isOpen={isNominationModalOpen}
+        onClose={() => setIsNominationModalOpen(false)}
+        initialCategory={selectedCategoryForNomination}
+        allParticipants={allMergedParticipants}
+        localNominations={localNominations}
+        onNominationAdded={handleNominationAdded}
       />
 
       {/* Real-time Google Sheets Auto-Sync Toast Notification */}

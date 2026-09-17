@@ -28,6 +28,14 @@ export interface CompetitionWinner {
   rank: string; // '1st', '2nd', '3rd'
 }
 
+export interface CompetitionParticipant {
+  eventCategory: string;
+  srNo: number;
+  name: string;
+  wing: string;
+  flatNumber: string;
+}
+
 export interface NominationCategoryStat {
   category: string;
   nominations: number;
@@ -104,6 +112,7 @@ export interface NotificationItem {
   active: boolean;
   linkText?: string;
   linkSectionId?: string;
+  linkUrl?: string;
 }
 
 export interface AartiStanza {

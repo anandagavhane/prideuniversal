@@ -7,6 +7,27 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('@capacitor')) {
+              return 'vendor-capacitor';
+            }
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 })
 

@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Clock } from 'lucide-react';
-import { AccountsData, NominationsDashboardData } from '../types';
+import { AccountsData, NominationsDashboardData, EventItem } from '../types';
 import { HeroCarousel } from './HeroCarousel';
 
 interface HeroProps {
   onNavigate: (sectionId: string) => void;
   accounts?: AccountsData;
   nominations?: NominationsDashboardData;
+  schedule?: EventItem[];
 }
 
-export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
-  // Countdown to 14 September 2026, 4:00 PM IST
-  const festivalTargetDate = new Date('2026-09-14T16:00:00+05:30').getTime();
+export const Hero: React.FC<HeroProps> = ({ onNavigate, schedule }) => {
+  // Countdown to festival Day 1 Aagaman IST
+  const festivalTargetDate = useMemo(() => {
+    if (schedule && schedule.length > 0 && schedule[0].dateStr) {
+      return new Date(`${schedule[0].dateStr}T16:00:00+05:30`).getTime();
+    }
+    return new Date('2026-09-14T16:00:00+05:30').getTime();
+  }, [schedule]);
+
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -80,7 +87,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
 
         {/* Core Values Tagline */}
         <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-base font-semibold text-amber-900/90 bg-amber-100/80 px-4 py-2 rounded-full border border-amber-300/80 mb-6 shadow-sm">
-          <span>• 12 Days</span>
+          <span>• {schedule && schedule.length > 0 ? `${schedule.length} Days` : '12 Days'}</span>
           <span className="text-amber-400">•</span>
           <span>• Devotion</span>
           <span className="text-amber-400">•</span>

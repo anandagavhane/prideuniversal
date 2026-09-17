@@ -10,7 +10,7 @@ interface ScheduleSectionProps {
   lastUpdated?: string;
 }
 
-export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
+export const ScheduleSection: React.FC<ScheduleSectionProps> = React.memo(({
   scheduleData,
   isLoading = false,
   onRefresh,
@@ -36,6 +36,35 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       label: `${standardCategoryIcons[cat] || '✨'} ${cat}`
     }))
   ];
+
+  const highlightEvents = activeEvents.filter(e => e.highlight);
+  const displayMilestones = highlightEvents.length > 0 
+    ? highlightEvents 
+    : activeEvents.slice(0, 4);
+
+  const getMilestonePhoto = (ev: EventItem) => {
+    const cat = (ev.category || '').toLowerCase();
+    const title = (ev.title || '').toLowerCase();
+    if (cat.includes('aagaman') || title.includes('aagaman')) {
+      return '/photos/img_20250906_wa0108.jpg';
+    }
+    if (cat.includes('visarjan') || title.includes('visarjan')) {
+      return '/photos/memories_visrjan_2025.jpg';
+    }
+    if (cat.includes('puja') || title.includes('satyanarayan') || title.includes('mahaprasad')) {
+      return '/photos/memories_mahaprasad1.jpeg';
+    }
+    if (title.includes('drawing') || title.includes('painting')) {
+      return '/photos/img_20250830_wa0005.jpg';
+    }
+    if (cat.includes('cultural') || title.includes('dance') || title.includes('atharvashirsha')) {
+      return '/photos/memories_advik_2025.jpg';
+    }
+    if (cat.includes('games') || title.includes('game')) {
+      return '/photos/img_20250906_wa0110.jpg';
+    }
+    return '/photos/memories_2025_idol2.jpeg';
+  };
 
   const filteredEvents = selectedCategory === 'All'
     ? activeEvents
@@ -69,10 +98,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           </h2>
           
           <p className="text-base sm:text-lg text-amber-900 font-semibold font-marathi">
-            १२ दिवस • भक्ती • संस्कृती • एकोप्याचा उत्सव
+            {activeEvents.length > 0 ? `${activeEvents.length} दिवस` : '१२ दिवस'} • भक्ती • संस्कृती • एकोप्याचा उत्सव
           </p>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            From 14 September 2026 to 25 September 2026 at Pride Universal Society Premises
+            {activeEvents.length > 0 && activeEvents[0].displayDate && activeEvents[activeEvents.length - 1].displayDate
+              ? `From ${activeEvents[0].displayDate.replace(/^Day \d+\s*-\s*/, '')} to ${activeEvents[activeEvents.length - 1].displayDate.replace(/^Day \d+\s*-\s*/, '')} at Pride Universal Society Premises`
+              : 'From 14 September 2026 to 25 September 2026 at Pride Universal Society Premises'}
           </p>
 
           {/* Live Schedule Status & Manual Refresh Bar */}
@@ -117,7 +148,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           ))}
         </div>
 
-        {/* 12-Day Grid of Cards (Matching the Canva design) */}
+        {/* Grid of Cards (Matching the Canva design) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event: EventItem) => (
             <div
@@ -176,122 +207,73 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         </div>
 
         {/* Festival Mega Highlights Showcase */}
-        <div className="mt-14">
-          <div className="text-center mb-6">
-            <span className="text-xs font-bold text-amber-800 uppercase tracking-widest bg-amber-100 px-3 py-1 rounded-full border border-amber-300 inline-block mb-1">
-              ✨ 4 Key Festival Milestones
-            </span>
-            <h3 className="text-2xl font-black text-red-950 font-festive">
-              महोत्सवाचे प्रमुख आकर्षण व क्षणचित्रे
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Card 1: Aagaman */}
-            <div className="bg-white rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md group festive-card-hover flex flex-col justify-between">
-              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                <img 
-                  src="/photos/img_20250906_wa0108.jpg" 
-                  alt="Ganesh Aagaman Procession" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-2.5 left-2.5 bg-red-700/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow border border-amber-300">
-                  Day 1 • 14 Sep
-                </div>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-black text-sm text-red-950 font-festive mb-1">
-                    Grand Aagaman (आगमन)
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    Main Gate welcome with live Dhol Tasha, lezim troupe, flower shower, and traditional sthapana puja.
-                  </p>
-                </div>
-              </div>
+        {displayMilestones.length > 0 && (
+          <div className="mt-14">
+            <div className="text-center mb-6">
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-widest bg-amber-100 px-3 py-1 rounded-full border border-amber-300 inline-block mb-1">
+                ✨ {displayMilestones.length} Key Festival Milestones
+              </span>
+              <h3 className="text-2xl font-black text-red-950 font-festive">
+                महोत्सवाचे प्रमुख आकर्षण व क्षणचित्रे
+              </h3>
             </div>
 
-            {/* Card 2: Cultural Night & Bal Gopal */}
-            <div className="bg-white rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md group festive-card-hover flex flex-col justify-between">
-              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                <img 
-                  src="/photos/memories_advik_2025.jpg" 
-                  alt="Little Devotees & Bal Gopal Celebration" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-2.5 left-2.5 bg-festival-saffron/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow border border-amber-300">
-                  Day 7 • 20 Sep
-                </div>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-black text-sm text-red-950 font-festive mb-1">
-                    Cultural Night & Bal Gopal (सांस्कृतिक)
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    Atharvashirsha pathan, fancy dress, kids dance performances, and vibrant cultural evening.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Mahaprasad */}
-            <div className="bg-white rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md group festive-card-hover flex flex-col justify-between">
-              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                <img 
-                  src="/photos/memories_mahaprasad1.jpeg" 
-                  alt="Satyanarayan Puja & Mahaprasad Feast" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-2.5 left-2.5 bg-amber-600/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow border border-amber-300">
-                  Day 11 • 24 Sep
-                </div>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-black text-sm text-red-950 font-festive mb-1">
-                    Satyanarayan Puja & Mahaprasad
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    Auspicious community Satyanarayan Puja followed by grand society Mahaprasad feast.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Visarjan & Prasthan */}
-            <div className="bg-white rounded-2xl overflow-hidden border-2 border-amber-400 ring-2 ring-amber-300/30 shadow-md group festive-card-hover flex flex-col justify-between">
-              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                <img 
-                  src="/photos/memories_visrjan_2025.jpg" 
-                  alt="Pride Universal Ganesh Visarjan Procession Topper" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-2.5 left-2.5 bg-festival-darkRed/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow border border-amber-300">
-                  Day 12 • 25 Sep
-                </div>
-                <div className="absolute top-2.5 right-2.5 bg-gradient-to-r from-amber-400 to-yellow-300 text-red-950 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow">
-                  ⭐ Topper
-                </div>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-black text-sm text-red-950 font-festive mb-1">
-                    Visarjan Miravnuk (विसर्जन)
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    Final ceremonial Uttarpuja, collective Maha Aarti, and emotional farewell chants: "पुढच्या वर्षी लवकर या!".
-                  </p>
-                </div>
-              </div>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${displayMilestones.length <= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-5'} gap-5`}>
+              {displayMilestones.map((milestone) => {
+                const isVisarjan = (milestone.category || '').toLowerCase().includes('visarjan') || milestone.day === activeEvents.length;
+                return (
+                  <div 
+                    key={milestone.day}
+                    className={`bg-white rounded-2xl overflow-hidden border-2 ${
+                      isVisarjan ? 'border-amber-400 ring-2 ring-amber-300/30' : 'border-amber-300'
+                    } shadow-md group festive-card-hover flex flex-col justify-between`}
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
+                      <img 
+                        src={getMilestonePhoto(milestone)} 
+                        alt={milestone.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-red-700/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow border border-amber-300">
+                        Day {milestone.day} • {milestone.displayDate.replace(/^Day \d+\s*-\s*/, '')}
+                      </div>
+                      {isVisarjan && (
+                        <div className="absolute top-2.5 right-2.5 bg-gradient-to-r from-amber-400 to-yellow-300 text-red-950 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow">
+                          ⭐ Topper
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-black text-sm text-red-950 font-festive mb-1">
+                          {milestone.title}
+                        </h4>
+                        {milestone.description && (
+                          <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                            {milestone.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-amber-100 flex items-center justify-between text-[10px] text-amber-800 font-semibold">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-red-600" />
+                          {milestone.time}
+                        </span>
+                        <span className="bg-amber-100/80 px-2 py-0.5 rounded-full">
+                          {milestone.category}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
-};
+});
+
+ScheduleSection.displayName = 'ScheduleSection';

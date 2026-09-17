@@ -4,7 +4,7 @@ import { Image as ImageIcon, ZoomIn, X, ChevronLeft, ChevronRight } from 'lucide
 import { GALLERY_PHOTOS } from '../data/scheduleData';
 import { GalleryPhoto } from '../types';
 
-export const GallerySection: React.FC = () => {
+export const GallerySection: React.FC = React.memo(() => {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -283,4 +283,6 @@ export const GallerySection: React.FC = () => {
       </div>
     </section>
   );
-};
+});
+
+GallerySection.displayName = 'GallerySection';

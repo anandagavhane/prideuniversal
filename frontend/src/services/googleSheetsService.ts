@@ -1,7 +1,8 @@
-import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
-import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS } from '../data/fallbackData';
+import { AccountsData, NominationsDashboardData, NominationCategoryStat, WingCollection, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner, CompetitionParticipant } from '../types';
+import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIONS, FALLBACK_SELECTED_EMCEES, FALLBACK_WINNERS, FALLBACK_COMPETITION_PARTICIPANTS } from '../data/fallbackData';
 import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { SPONSORS_CSV_URL } from './adService';
+import { normalizeCategory, isExcludedCategory } from './nominationService';
 
 export const NOMINATIONS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=20260911&single=true&output=csv';
@@ -24,6 +25,10 @@ export const SELECTED_EMCEES_CSV_URL =
 // Published CSV URL for Competition Winners Tab
 export const WINNERS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=1253355035&single=true&output=csv';
+
+// Published CSV URL for Live Competition Participants / Nominations List by Event Category
+export const COMPETITIONS_PARTICIPANTS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=614822234&single=true&output=csv';
 
 export const GOOGLE_NOMINATION_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
@@ -80,12 +85,30 @@ export function parseCSV(text: string): string[][] {
 }
 
 /**
+ * Robust fetch wrapper with configurable timeout (defaults to 8000ms / 8s).
+ * Prevents requests from hanging indefinitely on sluggish mobile networks.
+ */
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Fetch and parse Nominations Sheet data
  */
 export async function fetchNominationsData(): Promise<NominationsDashboardData> {
   try {
     const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetch(`${NOMINATIONS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
+    const response = await fetchWithTimeout(`${NOMINATIONS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -160,6 +183,7 @@ export async function fetchNominationsData(): Promise<NominationsDashboardData> 
               wingBPercent = `${((wingBTotal / totalNominations) * 100).toFixed(1)}%`;
             }
           } else if (!/^\d+$/.test(cat.trim())) {
+            if (isExcludedCategory(cat)) continue;
             categories.push({
               category: cat,
               nominations: noms,
@@ -216,7 +240,7 @@ export async function fetchNominationsData(): Promise<NominationsDashboardData> 
 export async function fetchAccountsData(): Promise<AccountsData> {
   try {
     const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetch(`${ACCOUNTS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
+    const response = await fetchWithTimeout(`${ACCOUNTS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -629,7 +653,7 @@ export async function fetchDriveFolderPhotos(feedUrl: string = GOOGLE_DRIVE_FEED
   try {
     const separator = feedUrl.includes('?') ? '&' : '?';
     const cacheBuster = `${separator}_t=${Date.now()}`;
-    const res = await fetch(`${feedUrl}${cacheBuster}`);
+    const res = await fetchWithTimeout(`${feedUrl}${cacheBuster}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -663,7 +687,7 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
     try {
       const separator = url.includes('?') ? '&' : '?';
       const cacheBuster = `${separator}_t=${Date.now()}&_cb=${Math.random().toString(36).substring(7)}`;
-      const response = await fetch(`${url}${cacheBuster}`, { 
+      const response = await fetchWithTimeout(`${url}${cacheBuster}`, { 
         cache: 'no-store',
         headers: {
           'Pragma': 'no-cache',
@@ -700,6 +724,7 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
         date: -1,
         active: -1,
         linkText: -1,
+        linkUrl: -1,
         linkSectionId: -1
       };
 
@@ -710,6 +735,7 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
         else if (c.includes('type') || c.includes('प्रकार')) colMap.type = idx;
         else if (c.includes('date') || c.includes('तारीख') || c.includes('वेळ')) colMap.date = idx;
         else if (c.includes('active') || c.includes('चालू') || c.includes('सक्रिय') || c.includes('status')) colMap.active = idx;
+        else if (c.includes('link url') || c.includes('url') || c.includes('लिंक')) colMap.linkUrl = idx;
         else if (c.includes('link text') || c.includes('बटण') || c.includes('button')) colMap.linkText = idx;
         else if (c.includes('link section') || c.includes('section') || c.includes('विभाग')) colMap.linkSectionId = idx;
       });
@@ -720,7 +746,8 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
       const dateIdx = colMap.date !== -1 ? colMap.date : 3;
       const activeIdx = colMap.active !== -1 ? colMap.active : 4;
       const linkTextIdx = colMap.linkText !== -1 ? colMap.linkText : 5;
-      const linkSecIdx = colMap.linkSectionId !== -1 ? colMap.linkSectionId : 6;
+      const linkUrlIdx = colMap.linkUrl !== -1 ? colMap.linkUrl : -1;
+      const linkSecIdx = colMap.linkSectionId !== -1 ? colMap.linkSectionId : (linkUrlIdx !== -1 ? linkUrlIdx + 1 : 6);
 
       const dataRows = rows.slice(headerRowIndex + 1);
       const parsedItems: NotificationItem[] = [];
@@ -742,9 +769,19 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
         const rawActive = (cols[activeIdx] || 'yes').toLowerCase().trim();
         const active = !['no', 'false', '0', 'बंद', 'नाही'].includes(rawActive);
 
-        const linkText = cols[linkTextIdx] ? cols[linkTextIdx].trim() : undefined;
-        const rawLinkSec = cols[linkSecIdx] ? cols[linkSecIdx].trim() : undefined;
+        const linkText = linkTextIdx !== -1 && cols[linkTextIdx] ? cols[linkTextIdx].trim() : undefined;
+        let linkUrl = linkUrlIdx !== -1 && cols[linkUrlIdx] ? cols[linkUrlIdx].trim() : undefined;
+        const rawLinkSec = linkSecIdx !== -1 && cols[linkSecIdx] ? cols[linkSecIdx].trim() : undefined;
         const linkSectionId = rawLinkSec && !/^(https?:\/\/)/i.test(rawLinkSec) ? rawLinkSec.toLowerCase() : rawLinkSec;
+
+        // Fallback for linkUrl if URL was pasted in linkText or rawLinkSec
+        if (!linkUrl) {
+          if (rawLinkSec && /^https?:\/\//i.test(rawLinkSec)) {
+            linkUrl = rawLinkSec;
+          } else if (linkText && /^https?:\/\//i.test(linkText)) {
+            linkUrl = linkText;
+          }
+        }
 
         // Content-aware unique ID so that any added or updated message in Google Sheets is immediately detected as new
         const cleanSignature = `${title}_${message}_${date}`.replace(/\s+/g, '_').slice(0, 36);
@@ -757,7 +794,8 @@ export async function fetchNotificationsData(csvUrl: string = NOTIFICATIONS_CSV_
           date,
           active,
           linkText,
-          linkSectionId
+          linkSectionId,
+          linkUrl
         });
       });
 
@@ -878,22 +916,22 @@ export const DEFAULT_DECORATION_SLIDES: DecorationSlide[] = [
   {
     id: 'decor-1',
     imageUrl: '/photos/memories_2025_idol.jpeg',
-    title: 'भव्य गणेश मंदिर व मखर सजावट',
-    subtitle: 'पारंपरिक सुवर्ण मखर व विलोभनीय विद्युत रोषणाई',
+    title: 'श्री गणेश दिव्य दर्शन व आशीर्वाद',
+    subtitle: 'प्राइड युनिव्हर्सल बाप्पांचे तेजस्वी व विलोभनीय रूप',
     mediaType: 'image'
   },
   {
     id: 'decor-2',
-    imageUrl: '/photos/memories_2025_idol2.jpeg',
-    title: 'श्री गणेश दिव्य दर्शन व आरास',
-    subtitle: 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी स्वरूप',
+    imageUrl: '/photos/memories_2025_aarti.jpeg',
+    title: 'संध्या महाआरती व भाविकांचा गजर',
+    subtitle: 'सामूहिक महाआरती, पारंपरिक वाद्ये व टाळ्यांचा गजर',
     mediaType: 'image'
   },
   {
     id: 'decor-3',
-    imageUrl: '/photos/memories_2025_idol3.jpeg',
-    title: 'फुलांची नयनरम्य सजावट व सुवर्ण झालर',
-    subtitle: 'भक्तिमय वातावरणात बाप्पांचा सजलेला दरबार',
+    imageUrl: '/photos/memories_2025_idol2.jpeg',
+    title: 'उत्सव प्रांगण व मनमोहक आरास',
+    subtitle: 'भक्तिमय वातावरणात सजलेला लाडक्या बाप्पांचा दरबार',
     mediaType: 'image'
   }
 ];
@@ -1008,7 +1046,7 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
   if (csvUrl) {
     try {
       const separator = csvUrl.includes('?') ? '&' : '?';
-      const res = await fetch(`${csvUrl}${separator}_t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetchWithTimeout(`${csvUrl}${separator}_t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const text = await res.text();
         const rows = parseCSV(text);
@@ -1038,18 +1076,25 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
             }
 
             const mediaParsed = parseDecorationMedia(rawPhoto || targetMedia, rawVideo);
-            let title = (titleColIdx !== -1 && row[titleColIdx]) ? row[titleColIdx].trim() : `मंदिर व मखर आरास ${i}`;
+            let title = (titleColIdx !== -1 && row[titleColIdx]) ? row[titleColIdx].trim() : `उत्सव क्षणचित्र ${i}`;
             let subtitle = (subtitleColIdx !== -1 && row[subtitleColIdx]) ? row[subtitleColIdx].trim() : undefined;
 
-            // Festive title and subtitle context for common values
-            if (title.toLowerCase().startsWith('idol')) {
-              const num = title.replace(/[^0-9]/g, '');
-              title = num ? `श्री गणेश मूर्ती दिव्य दर्शन ${num} (Idol ${num})` : 'श्री गणेश मूर्ती दिव्य दर्शन (Idol)';
-              if (!subtitle) subtitle = 'सोसायटीच्या लाडक्या बाप्पांचे तेजस्वी व विलोभनीय स्वरूप';
-            } else if (title.toLowerCase().startsWith('temple') || title.toLowerCase().startsWith('mandap')) {
-              const num = title.replace(/[^0-9]/g, '');
-              title = num ? `भव्य मंदिर व मखर सजावट ${num} (Temple & Mandap ${num})` : 'भव्य मंदिर व मखर सजावट (Temple & Mandap)';
-              if (!subtitle) subtitle = 'पारंपरिक फुले, सुवर्ण झालर व नयनरम्य विद्युत रोषणाई';
+            // Provide tangy, festive context if subtitle is not given
+            if (!subtitle) {
+              const lowTitle = title.toLowerCase();
+              if (lowTitle.includes('bappa') && !lowTitle.includes('aarti')) {
+                subtitle = 'प्राइड युनिव्हर्सल बाप्पांचे मनमोहक व तेजस्वी दिव्य दर्शन';
+              } else if (lowTitle.includes('aarti')) {
+                subtitle = 'सामूहिक महाआरती, पारंपरिक मंत्रघोष व भक्तिमय वातावरण';
+              } else if (lowTitle.includes('devotee')) {
+                subtitle = 'सोसायटीचे भाविक, ज्येष्ठ नागरिक व बालगोपाळ आरती दर्शन';
+              } else if (lowTitle.includes('game') || lowTitle.includes('खेळ')) {
+                subtitle = '२ मिनिटांचे मजेशीर खेळ, जल्लोष व रहिवाशांचे आनंदी क्षण';
+              } else if (mediaParsed.mediaType === 'video' || mediaParsed.mediaType === 'drive-video' || mediaParsed.mediaType === 'youtube') {
+                subtitle = 'सोसायटी प्रांगणातील थेट उत्सव व्हिडिओ व जल्लोष क्षण';
+              } else {
+                subtitle = 'प्राइड युनिव्हर्सल गणेशोत्सव २०२६ चे अविस्मरणीय क्षण';
+              }
             }
 
             const order = (orderColIdx !== -1 && row[orderColIdx]) ? parseInt(row[orderColIdx], 10) : i;
@@ -1095,7 +1140,7 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
   // 2. Check Notifications Sheet for any decor/mandap/temple announcements or photo URLs
   if (foundSlides.length === 0) {
     try {
-      const res = await fetch(`${NOTIFICATIONS_CSV_URL}${cacheBuster}`);
+      const res = await fetchWithTimeout(`${NOTIFICATIONS_CSV_URL}${cacheBuster}`);
       if (res.ok) {
         const text = await res.text();
         const rows = parseCSV(text);
@@ -1149,7 +1194,7 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
   // 3. Check Sponsors Sheet for any Mandap/Decoration sponsor row or poster
   if (foundSlides.length === 0) {
     try {
-      const res = await fetch(`${SPONSORS_CSV_URL}${cacheBuster}`);
+      const res = await fetchWithTimeout(`${SPONSORS_CSV_URL}${cacheBuster}`);
       if (res.ok) {
         const text = await res.text();
         const rows = parseCSV(text);
@@ -1257,6 +1302,32 @@ export function formatScheduleTime(timeStr: string): string {
     if (hour === 0) hour = 12;
     return `${hour}:${minute} ${ampm}`;
   }
+  // Standardize am/pm casing to uppercase AM/PM
+  return trimmed.replace(/\b(am|pm)\b/gi, (match) => match.toUpperCase());
+}
+
+/**
+ * Normalizes any date string into standard ISO YYYY-MM-DD
+ */
+export function normalizeScheduleDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  // YYYY-MM-DD
+  const mISO = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (mISO) {
+    const y = mISO[1];
+    const m = mISO[2].padStart(2, '0');
+    const d = mISO[3].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  // DD-MM-YYYY or DD/MM/YYYY
+  const mDMY = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (mDMY) {
+    const d = mDMY[1].padStart(2, '0');
+    const m = mDMY[2].padStart(2, '0');
+    const y = mDMY[3];
+    return `${y}-${m}-${d}`;
+  }
   return trimmed;
 }
 
@@ -1266,14 +1337,22 @@ export function formatScheduleTime(timeStr: string): string {
 export function formatScheduleDisplayDate(day: number, dateStr: string): string {
   if (!dateStr) return `Day ${day}`;
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const m = dateStr.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const trimmed = dateStr.trim();
+  const m = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) {
     const monthIdx = parseInt(m[2], 10) - 1;
     const monthName = months[monthIdx] || m[2];
     const dayNum = parseInt(m[3], 10);
     return `Day ${day} - ${dayNum} ${monthName} ${m[1]}`;
   }
-  return `Day ${day} - ${dateStr.trim()}`;
+  const m2 = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (m2) {
+    const dayNum = parseInt(m2[1], 10);
+    const monthIdx = parseInt(m2[2], 10) - 1;
+    const monthName = months[monthIdx] || m2[2];
+    return `Day ${day} - ${dayNum} ${monthName} ${m2[3]}`;
+  }
+  return `Day ${day} - ${trimmed}`;
 }
 
 /**
@@ -1282,70 +1361,95 @@ export function formatScheduleDisplayDate(day: number, dateStr: string): string 
 export async function fetchFestivalSchedule(csvUrl: string = SCHEDULE_CSV_URL): Promise<EventItem[]> {
   try {
     const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    const response = await fetchWithTimeout(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
 
-    if (rows.length <= 1) {
-      return FESTIVAL_SCHEDULE;
-    }
+    if (rows.length > 1) {
+      // Find header column indices
+      const headerRow = rows[0].map(h => h.toLowerCase().trim());
+      const dayIdx = headerRow.findIndex(h => h.includes('day'));
+      const dateIdx = headerRow.findIndex(h => h.includes('date'));
+      const timeIdx = headerRow.findIndex(h => h.includes('time'));
+      const titleIdx = headerRow.findIndex(h => h.includes('title') || h.includes('event') || h.includes('name'));
+      const descIdx = headerRow.findIndex(h => h.includes('desc') || h.includes('detail'));
+      const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('type'));
+      const iconIdx = headerRow.findIndex(h => h.includes('icon') || h.includes('emoji'));
+      const highlightIdx = headerRow.findIndex(h => h.includes('highlight') || h.includes('major') || h.includes('important'));
 
-    // Find header column indices
-    const headerRow = rows[0].map(h => h.toLowerCase().trim());
-    const dayIdx = headerRow.findIndex(h => h.includes('day'));
-    const dateIdx = headerRow.findIndex(h => h.includes('date'));
-    const timeIdx = headerRow.findIndex(h => h.includes('time'));
-    const titleIdx = headerRow.findIndex(h => h.includes('title') || h.includes('event') || h.includes('name'));
-    const descIdx = headerRow.findIndex(h => h.includes('desc') || h.includes('detail'));
-    const catIdx = headerRow.findIndex(h => h.includes('cat') || h.includes('type'));
-    const iconIdx = headerRow.findIndex(h => h.includes('icon') || h.includes('emoji'));
-    const highlightIdx = headerRow.findIndex(h => h.includes('highlight') || h.includes('major') || h.includes('important'));
+      const parsedEvents: EventItem[] = [];
 
-    const parsedEvents: EventItem[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length < 2 || row.every(cell => !cell || cell.trim() === '')) continue;
 
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 2 || row.every(cell => !cell || cell.trim() === '')) continue;
+        const rawDay = dayIdx !== -1 && row[dayIdx] ? row[dayIdx].trim() : '';
+        const day = parseInt(rawDay.replace(/\D/g, ''), 10) || (parsedEvents.length + 1);
+        const rawDate = dateIdx !== -1 && row[dateIdx] ? row[dateIdx].trim() : '';
+        const dateStr = normalizeScheduleDate(rawDate);
+        const rawTime = timeIdx !== -1 && row[timeIdx] ? row[timeIdx].trim() : '';
+        const time = formatScheduleTime(rawTime);
+        const rawTitle = titleIdx !== -1 && row[titleIdx] ? row[titleIdx].trim() : `Festival Event ${day}`;
+        const description = descIdx !== -1 && row[descIdx] ? row[descIdx].trim() : '';
+        const category = (catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : 'Cultural');
+        const rawIcon = iconIdx !== -1 && row[iconIdx] ? row[iconIdx].trim() : '';
+        const icon = rawIcon || '📅';
 
-      const rawDay = dayIdx !== -1 && row[dayIdx] ? row[dayIdx].trim() : '';
-      const day = parseInt(rawDay.replace(/\D/g, ''), 10) || (parsedEvents.length + 1);
-      const dateStr = dateIdx !== -1 && row[dateIdx] ? row[dateIdx].trim() : '';
-      const rawTime = timeIdx !== -1 && row[timeIdx] ? row[timeIdx].trim() : '';
-      const time = formatScheduleTime(rawTime);
-      const rawTitle = titleIdx !== -1 && row[titleIdx] ? row[titleIdx].trim() : `Festival Event ${day}`;
-      const description = descIdx !== -1 && row[descIdx] ? row[descIdx].trim() : '';
-      const category = (catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : 'Cultural');
-      const rawIcon = iconIdx !== -1 && row[iconIdx] ? row[iconIdx].trim() : '';
-      const icon = rawIcon || '📅';
+        const rawHighlight = highlightIdx !== -1 && row[highlightIdx] ? row[highlightIdx].trim() : '';
+        const highlight = /^(yes|true|1|y)$/i.test(rawHighlight);
 
-      const rawHighlight = highlightIdx !== -1 && row[highlightIdx] ? row[highlightIdx].trim() : '';
-      const highlight = /^(yes|true|1|y)$/i.test(rawHighlight);
+        // Prepend icon to title if not already starting with an emoji or icon
+        const startsWithEmoji = /^[\p{Emoji}\u200d]+/u.test(rawTitle);
+        const displayTitle = icon && !startsWithEmoji && !rawTitle.startsWith(icon)
+          ? `${icon} ${rawTitle}`
+          : rawTitle;
 
-      // Prepend icon to title if not already present, ensuring consistent visual flair
-      const displayTitle = icon && !rawTitle.startsWith(icon) ? `${icon} ${rawTitle}` : rawTitle;
+        parsedEvents.push({
+          day,
+          dateStr,
+          displayDate: formatScheduleDisplayDate(day, dateStr),
+          time,
+          title: displayTitle,
+          description,
+          icon,
+          category,
+          highlight
+        });
+      }
 
-      parsedEvents.push({
-        day,
-        dateStr,
-        displayDate: formatScheduleDisplayDate(day, dateStr),
-        time,
-        title: displayTitle,
-        description,
-        icon,
-        category,
-        highlight
-      });
-    }
-
-    if (parsedEvents.length > 0) {
-      parsedEvents.sort((a, b) => a.day - b.day);
-      return parsedEvents;
+      if (parsedEvents.length > 0) {
+        parsedEvents.sort((a, b) => a.day - b.day);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('cached_festival_schedule', JSON.stringify(parsedEvents));
+          } catch (e) {
+            // ignore quota error
+          }
+        }
+        return parsedEvents;
+      }
     }
   } catch (err) {
     console.warn('Error fetching live Festival Schedule from Google Sheets:', err);
   }
 
+  // 1. Fallback to localStorage cached sheet data if available
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('cached_festival_schedule');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 2. Final fallback to bundled data
   return FESTIVAL_SCHEDULE;
 }
 
@@ -1356,7 +1460,7 @@ export async function fetchFestivalSchedule(csvUrl: string = SCHEDULE_CSV_URL): 
 export async function fetchSelectedEmcees(csvUrl: string = SELECTED_EMCEES_CSV_URL): Promise<SelectedEmcee[]> {
   try {
     const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    const response = await fetchWithTimeout(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -1418,7 +1522,7 @@ export async function fetchSelectedEmcees(csvUrl: string = SELECTED_EMCEES_CSV_U
 export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL): Promise<CompetitionWinner[]> {
   try {
     const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetch(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    const response = await fetchWithTimeout(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -1515,6 +1619,86 @@ export async function fetchCompetitionWinners(csvUrl: string = WINNERS_CSV_URL):
   return FALLBACK_WINNERS;
 }
 
+/**
+ * Fetch and parse Live Competition Participants list by event category from Google Sheets
+ */
+export async function fetchCompetitionParticipants(
+  csvUrl: string = COMPETITIONS_PARTICIPANTS_CSV_URL
+): Promise<CompetitionParticipant[]> {
+  try {
+    const cacheBuster = `&_t=${Date.now()}`;
+    const response = await fetchWithTimeout(`${csvUrl}${cacheBuster}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
 
+    if (rows.length <= 1) {
+      return FALLBACK_COMPETITION_PARTICIPANTS;
+    }
 
+    const headerRow = rows[0].map(h => h.toLowerCase().trim());
+    const catIdx = headerRow.findIndex(h => h.includes('category') || h.includes('event') || h.includes('spardha'));
+    const srNoIdx = headerRow.findIndex(h => h.includes('sr') || (h.includes('no') && !h.includes('flat')));
+    const nameIdx = headerRow.findIndex(h => h.includes('name'));
+    const wingIdx = headerRow.findIndex(h => h.includes('wing'));
+    const flatIdx = headerRow.findIndex(h => h.includes('flat') || h.includes('room'));
 
+    const list: CompetitionParticipant[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length < 2 || row.every(c => !c || c.trim() === '')) continue;
+
+      const rawCategory = catIdx !== -1 && row[catIdx] ? row[catIdx].trim() : (row[0] ? row[0].trim() : '');
+      if (isExcludedCategory(rawCategory)) continue;
+      const eventCategory = normalizeCategory(rawCategory);
+      if (isExcludedCategory(eventCategory)) continue;
+      const srNo = srNoIdx !== -1 && row[srNoIdx]
+        ? parseInt(row[srNoIdx].replace(/\D/g, ''), 10) || (list.length + 1)
+        : (list.length + 1);
+      const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx].trim() : '';
+      
+      let wing = wingIdx !== -1 && row[wingIdx] ? row[wingIdx].trim().toUpperCase() : '';
+      if (wing.includes('A')) wing = 'A';
+      else if (wing.includes('B')) wing = 'B';
+
+      const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : '';
+
+      if (name && eventCategory) {
+        list.push({
+          eventCategory,
+          srNo,
+          name,
+          wing,
+          flatNumber
+        });
+      }
+    }
+
+    if (list.length > 0) {
+      try {
+        localStorage.setItem('cached_competition_participants', JSON.stringify(list));
+      } catch {
+        // safe fallback
+      }
+      return list;
+    }
+  } catch (err) {
+    console.warn('Error fetching competition participants from Google Sheet:', err);
+  }
+
+  // Fallback to cached participants if valid
+  try {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_competition_participants') : null;
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].name && parsed[0].eventCategory) {
+        return parsed;
+      }
+    }
+  } catch {
+    // safe fallback
+  }
+
+  return FALLBACK_COMPETITION_PARTICIPANTS;
+}

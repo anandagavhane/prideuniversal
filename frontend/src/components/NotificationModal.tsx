@@ -22,7 +22,7 @@ interface NotificationModalProps {
   notifications: NotificationItem[];
   readIds: string[];
   onMarkAllAsRead: () => void;
-  onNavigate: (sectionId: string, linkText?: string) => void;
+  onNavigate: (sectionId: string, linkText?: string, linkUrl?: string) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -230,39 +230,43 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                   </p>
 
                   {(() => {
-                    const rawLink = item.linkSectionId || (
-                      item.linkText?.toLowerCase().endsWith('.apk') || 
-                      item.linkText?.startsWith('http') || 
-                      ['update', 'download', 'apk', 'schedule', 'competitions', 'nominations', 'accounts', 'aarti', 'gallery', 'committee', 'sponsors'].includes(item.linkText?.toLowerCase() || '') 
-                        ? item.linkText 
-                        : undefined
-                    );
-                    if (!rawLink && !item.linkText) return null;
+                    const sec = (item.linkSectionId || '').trim();
+                    const lowerSec = sec.toLowerCase();
+                    const url = (item.linkUrl || '').trim();
+                    const text = (item.linkText || '').trim();
 
-                    const linkTarget = (rawLink || item.linkText || '').trim();
-                    const lowerTarget = linkTarget.toLowerCase();
-                    const isApk = lowerTarget.endsWith('.apk') || 
-                      lowerTarget === 'update' || 
-                      lowerTarget === 'download' || 
-                      lowerTarget === 'apk' ||
-                      (item.linkText && item.linkText.toLowerCase().endsWith('.apk'));
-                    const isExternal = /^(https?:\/\/)/i.test(linkTarget);
-                    const displayLabel = item.linkText || (isApk ? 'Download App (APK)' : isExternal ? 'Open Link' : 'View Details');
+                    if (!sec && !url && !text) return null;
+
+                    const isDownload = lowerSec === 'download' || 
+                      lowerSec === 'update' || 
+                      url.toLowerCase().endsWith('.apk') ||
+                      (!sec && text.toLowerCase().includes('download'));
+
+                    const isOpen = lowerSec === 'open' || 
+                      (!isDownload && /^https?:\/\//i.test(url));
+
+                    const isExternal = isDownload || isOpen || /^https?:\/\//i.test(url);
+
+                    const displayLabel = text || (
+                      isDownload ? 'Download APK' : 
+                      isOpen ? 'Open Link' : 
+                      'View Details'
+                    );
 
                     return (
                       <button
                         onClick={() => {
-                          onNavigate(linkTarget, displayLabel);
+                          onNavigate(sec || (isDownload ? 'download' : isOpen ? 'open' : ''), displayLabel, url);
                           onClose();
                         }}
-                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 shadow-xs cursor-pointer ${
-                          isApk 
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 shadow-sm cursor-pointer ${
+                          isDownload 
                             ? 'bg-gradient-to-r from-red-800 to-red-950 hover:brightness-110 text-amber-200 border-amber-400 ring-1 ring-amber-300/50' 
                             : 'bg-amber-100 hover:bg-amber-200 text-red-900 border-amber-300'
                         }`}
                       >
                         <span>{displayLabel}</span>
-                        {isApk ? (
+                        {isDownload ? (
                           <Download className="w-3.5 h-3.5 text-amber-300" />
                         ) : isExternal ? (
                           <ExternalLink className="w-3.5 h-3.5" />

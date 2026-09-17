@@ -15,7 +15,7 @@ import {
 import { AARTI_LIST } from '../data/aartiData';
 import { AartiItem } from '../types';
 
-export const AartiSection: React.FC = () => {
+export const AartiSection: React.FC = React.memo(() => {
   const [selectedAartiId, setSelectedAartiId] = useState<string>('sukhkarta');
   const [fontSize, setFontSize] = useState<'base' | 'lg' | 'xl' | '2xl'>('xl');
   const [scriptMode, setScriptMode] = useState<'marathi' | 'english' | 'both'>('marathi');
@@ -405,4 +405,6 @@ export const AartiSection: React.FC = () => {
       </div>
     </section>
   );
-};
+});
+
+AartiSection.displayName = 'AartiSection';

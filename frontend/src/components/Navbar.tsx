@@ -4,7 +4,6 @@ import {
   Calendar, 
   Trophy, 
   ClipboardList,
-  Mic,
   Award,
   BarChart3, 
   Flame, 
@@ -31,7 +30,6 @@ interface NavbarProps {
   isLive?: boolean;
   lastUpdated?: string;
   totalNominations?: number;
-  selectedEmceesCount?: number;
   autoSyncEnabled?: boolean;
   toggleAutoSync?: () => void;
   syncCountdown?: number;
@@ -51,7 +49,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   isLive,
   lastUpdated,
   totalNominations,
-  selectedEmceesCount = 6,
   autoSyncEnabled,
   toggleAutoSync,
   syncCountdown,
@@ -122,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, []);
 
-  // 5 Submenus under Events: 1) Schedules, 2) Competitions, 3) Nominations, 4) Emcees, 5) Winners
+  // 4 Submenus under Events: 1) Schedules, 2) Competitions, 3) Nominations, 4) Winners
   const eventsSubmenu = [
     { 
       id: 'schedule', 
@@ -146,13 +143,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       desc: 'Resident participants, entries & statistics'
     },
     { 
-      id: 'emcees', 
-      label: 'Emcees', 
-      marathi: '६ सूत्रसंचालक', 
-      icon: Mic,
-      desc: 'Selected festival hosts & stage anchors'
-    },
-    { 
       id: 'winners', 
       label: 'Winners', 
       marathi: 'स्पर्धा निकाल', 
@@ -161,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
   ];
 
-  // Primary navigation: 1) Home, 2) Events (with 5 submenus), 3) Aarti, 4) Memories, 5) Accounts, 6) Committee
+  // Primary navigation: 1) Home, 2) Events (with 4 submenus), 3) Aarti, 4) Memories, 5) Accounts, 6) Committee
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { 
@@ -185,7 +175,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
     const targetId = 
       (id === 'events' || id === 'schedule' || id === 'schedules') ? 'schedule' : 
-      id === 'emcees' ? 'selected-emcees' : 
       id;
     const element = document.getElementById(targetId) || document.getElementById(id);
     if (element) {
@@ -270,9 +259,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
 
-              // Submenu item for Events (with 5 submenus)
+              // Submenu item for Events (with 4 submenus)
               if (item.hasSubmenu) {
-                const isGroupActive = ['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab);
+                const isGroupActive = ['events', 'schedule', 'competitions', 'nominations', 'winners'].includes(activeTab);
                 return (
                   <div
                     key={item.id}
@@ -536,19 +525,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => handleNavClick('schedule')}
                 className={`w-full flex items-center justify-between p-3 text-xs font-bold text-left transition-all cursor-pointer ${
-                  ['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab)
+                  ['events', 'schedule', 'competitions', 'nominations', 'winners'].includes(activeTab)
                     ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-md'
                     : 'text-red-950 hover:bg-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Calendar className={`w-4 h-4 ${['events', 'schedule', 'competitions', 'nominations', 'emcees', 'winners'].includes(activeTab) ? 'text-amber-300' : 'text-red-900'}`} />
+                  <Calendar className={`w-4 h-4 ${['events', 'schedule', 'competitions', 'nominations', 'winners'].includes(activeTab) ? 'text-amber-300' : 'text-red-900'}`} />
                   <span className="text-sm">Events</span>
                 </div>
                 <span className="text-[10px] text-amber-800 font-marathi">१२ दिवस कार्यक्रम व स्पर्धा</span>
               </button>
 
-              {/* 5 Sub-items under Events */}
+              {/* 4 Sub-items under Events */}
               <div className="pl-4 pr-2 py-1.5 bg-amber-50/90 border-t border-amber-200/80 space-y-1">
                 {/* 2.1 Schedules */}
                 <button
@@ -598,23 +587,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="text-[10px] text-slate-500 font-marathi">नोंदणी</span>
                 </button>
 
-                {/* 2.4 Emcees */}
-                <button
-                  onClick={() => handleNavClick('emcees')}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
-                    activeTab === 'emcees'
-                      ? 'bg-gradient-to-r from-red-800 to-red-950 text-amber-100 shadow-xs'
-                      : 'text-slate-800 hover:bg-amber-100/90'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Mic className={`w-3.5 h-3.5 ${activeTab === 'emcees' ? 'text-amber-300' : 'text-amber-700'}`} />
-                    <span>2.4 Emcees</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-marathi">सूत्रसंचालक</span>
-                </button>
-
-                {/* 2.5 Winners */}
+                {/* 2.4 Winners */}
                 <button
                   onClick={() => handleNavClick('winners')}
                   className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
@@ -625,7 +598,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <Award className={`w-3.5 h-3.5 ${activeTab === 'winners' ? 'text-amber-300' : 'text-amber-700'}`} />
-                    <span>2.5 Winners</span>
+                    <span>2.4 Winners</span>
                   </div>
                   <span className="text-[10px] text-slate-500 font-marathi">निकाल</span>
                 </button>

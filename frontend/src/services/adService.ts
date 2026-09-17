@@ -14,6 +14,7 @@ export interface SponsorAd {
 
 export const GOOGLE_DRIVE_ADS_FOLDER_ID = '1uWY62gEzFzl2bgiLlOoeGIoUewgcj8a9';
 export const GOOGLE_DRIVE_ADS_FOLDER_URL = `https://drive.google.com/drive/folders/${GOOGLE_DRIVE_ADS_FOLDER_ID}`;
+export const GOOGLE_DRIVE_APK_FOLDER_URL = 'https://drive.google.com/drive/folders/19r6t1VDSuo0Syq0pWD9m5NHNqpLdAlNR';
 
 
 /**
@@ -231,13 +232,27 @@ function parseAdCSV(text: string): string[][] {
 }
 
 /**
+ * Robust fetch wrapper with timeout (8 seconds) for ad service
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Parse Sponsor Ads directly from a published Google Sheet / Excel CSV
  */
 export async function fetchSponsorAdsFromSheet(csvUrl: string = SPONSORS_CSV_URL): Promise<SponsorAd[] | null> {
   try {
     const separator = csvUrl.includes('?') ? '&' : '?';
     const cacheBuster = `${separator}_t=${Date.now()}&_cb=${Math.random().toString(36).substring(7)}`;
-    const res = await fetch(`${csvUrl}${cacheBuster}`, { 
+    const res = await fetchWithTimeout(`${csvUrl}${cacheBuster}`, { 
       cache: 'no-store',
       headers: {
         'Pragma': 'no-cache',
@@ -437,7 +452,7 @@ export async function fetchSponsorAds(sheetCsvUrl: string = SPONSORS_CSV_URL, dr
     try {
       const separator = driveFeedUrl.includes('?') ? '&' : '?';
       const cacheBuster = `${separator}_t=${Date.now()}`;
-      const res = await fetch(`${driveFeedUrl}${cacheBuster}`);
+      const res = await fetchWithTimeout(`${driveFeedUrl}${cacheBuster}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {

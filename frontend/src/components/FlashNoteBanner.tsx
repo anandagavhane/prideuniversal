@@ -3,7 +3,7 @@ import { Bell, ChevronRight, ChevronLeft, X, Sparkles, AlertTriangle, Calendar, 
 import { NotificationItem } from '../types';
 
 interface FlashNoteBannerProps {
-  onNavigate: (sectionId: string, linkText?: string) => void;
+  onNavigate: (sectionId: string, linkText?: string, linkUrl?: string) => void;
   notifications?: NotificationItem[];
   onOpenNotifications?: () => void;
 }
@@ -119,32 +119,36 @@ export const FlashNoteBanner: React.FC<FlashNoteBannerProps> = ({
           )}
 
           {(() => {
-            const rawLink = currentNotif.linkSectionId || (
-              currentNotif.linkText?.toLowerCase().endsWith('.apk') || 
-              currentNotif.linkText?.startsWith('http') || 
-              ['update', 'download', 'apk', 'schedule', 'competitions', 'nominations', 'accounts', 'aarti', 'gallery', 'committee', 'sponsors'].includes(currentNotif.linkText?.toLowerCase() || '') 
-                ? currentNotif.linkText 
-                : undefined
-            );
-            if (!rawLink && !currentNotif.linkText) return null;
+            const sec = (currentNotif.linkSectionId || '').trim();
+            const lowerSec = sec.toLowerCase();
+            const url = (currentNotif.linkUrl || '').trim();
+            const text = (currentNotif.linkText || '').trim();
 
-            const linkTarget = (rawLink || currentNotif.linkText || '').trim();
-            const lowerTarget = linkTarget.toLowerCase();
-            const isApk = lowerTarget.endsWith('.apk') || 
-              lowerTarget === 'update' || 
-              lowerTarget === 'download' || 
-              lowerTarget === 'apk' ||
-              (currentNotif.linkText && currentNotif.linkText.toLowerCase().endsWith('.apk'));
-            const isExternal = /^(https?:\/\/)/i.test(linkTarget);
-            const displayLabel = currentNotif.linkText || (isApk ? 'Download App (APK)' : isExternal ? 'Open Link' : 'View Details');
+            if (!sec && !url && !text) return null;
+
+            const isDownload = lowerSec === 'download' || 
+              lowerSec === 'update' || 
+              url.toLowerCase().endsWith('.apk') ||
+              (!sec && text.toLowerCase().includes('download'));
+
+            const isOpen = lowerSec === 'open' || 
+              (!isDownload && /^https?:\/\//i.test(url));
+
+            const isExternal = isDownload || isOpen || /^https?:\/\//i.test(url);
+
+            const displayLabel = text || (
+              isDownload ? 'Download APK' : 
+              isOpen ? 'Open Link' : 
+              'View Details'
+            );
 
             return (
               <button
-                onClick={() => onNavigate(linkTarget, displayLabel)}
+                onClick={() => onNavigate(sec || (isDownload ? 'download' : isOpen ? 'open' : ''), displayLabel, url)}
                 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-red-950 px-3 py-1 rounded-lg shadow transition-all hover:scale-105 cursor-pointer"
               >
                 <span>{displayLabel}</span>
-                {isApk ? (
+                {isDownload ? (
                   <Download className="w-3.5 h-3.5 text-red-950" />
                 ) : isExternal ? (
                   <ExternalLink className="w-3.5 h-3.5 text-red-950" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Phone, ExternalLink, ChevronLeft, ChevronRight, Sparkles, Megaphone, RefreshCw, X, ZoomIn, Download } from 'lucide-react';
+import { Phone, ExternalLink, ChevronLeft, ChevronRight, Sparkles, Megaphone, RefreshCw, X, ZoomIn } from 'lucide-react';
 import { SponsorAd, DEFAULT_SPONSOR_ADS } from '../services/adService';
 
 interface SponsorAdBannerProps {
@@ -10,7 +10,7 @@ interface SponsorAdBannerProps {
   isRefreshing?: boolean;
 }
 
-export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
+export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
   variant = 'top',
   ads = DEFAULT_SPONSOR_ADS,
   onNavigateToCommittee,
@@ -159,7 +159,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] sm:text-xs font-black uppercase px-3 py-1 rounded-full bg-gradient-to-r from-red-800 to-red-950 text-amber-200 border border-amber-300 shadow-sm flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>उत्सव अधिकृत प्रायोजक / Official Festival Sponsor</span>
+              <span>उत्सव विशेष जाहिराती / Festival Special Advertisements</span>
             </span>
             <span className="text-xs font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md">
               {currentAd.badgeText} ({currentIndex + 1}/{activeAds.length})
@@ -167,17 +167,6 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-            {/* Direct APK Download CTA */}
-            <a
-              href="/PrideFestival-Latest.apk"
-              download="PrideFestival-Latest.apk"
-              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-lg bg-gradient-to-r from-red-800 to-red-950 text-amber-200 hover:brightness-110 border border-amber-300 shadow-sm transition-all hover:scale-105"
-              title="Download latest Android APK (v1.1.0)"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-300" />
-              <span>Download App (APK)</span>
-            </a>
-
             {/* Stepper Buttons */}
             {activeAds.length > 1 && (
               <div className="flex items-center gap-1 bg-white/70 border border-amber-300/80 rounded-lg p-0.5 shadow-2xs">
@@ -474,5 +463,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = ({
       )}
     </section>
   );
-};
+});
+
+SponsorAdBanner.displayName = 'SponsorAdBanner';
 

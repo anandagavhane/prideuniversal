@@ -1,6 +1,7 @@
 import { FESTIVAL_SCHEDULE, COMMITTEE_DATA, GALLERY_PHOTOS } from '../data/scheduleData';
 import { AARTI_LIST } from '../data/aartiData';
-import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner } from '../types';
+import { AccountsData, NominationsDashboardData, NotificationItem, EventItem, SelectedEmcee, CompetitionWinner, CompetitionParticipant } from '../types';
+import { normalizeCategory } from './nominationService';
 
 export interface SearchResultItem {
   id: string;
@@ -19,12 +20,13 @@ export interface SearchResultItem {
 
 export const QUICK_SEARCH_TAGS = [
   { label: '🏆 Winners / विजेते', query: 'winner' },
+  { label: '👥 Participants / स्पर्धक', query: 'participant' },
   { label: '🪔 Aarti Sangrah / आरती संग्रह', query: 'aarti' },
   { label: '🎙️ Selected Emcees', query: 'emcee' },
   { label: '💃 Dance / नृत्य स्पर्धा', query: 'dance' },
   { label: '🍽️ Satyanarayan & Mahaprasad', query: 'mahaprasad' },
   { label: '💰 Accounts / जमा-खर्च', query: 'accounts' },
-  { label: '📅 12-Day Schedule', query: 'schedule' },
+  { label: '📅 Event Schedule / वेळापत्रक', query: 'schedule' },
   { label: '🎨 Drawing Competition', query: 'drawing' }
 ];
 
@@ -37,7 +39,8 @@ export function buildSearchIndex(
   nominations?: NominationsDashboardData | null,
   schedule?: EventItem[] | null,
   selectedEmcees?: SelectedEmcee[] | null,
-  winners?: CompetitionWinner[] | null
+  winners?: CompetitionWinner[] | null,
+  participants?: CompetitionParticipant[] | null
 ): SearchResultItem[] {
   const items: SearchResultItem[] = [];
 
@@ -174,6 +177,12 @@ export function buildSearchIndex(
       title: 'Piano & Instruments (वाद्य संगीत स्पर्धा)',
       desc: 'Keyboard, harmonium, flute, violin, or acoustic solo instrumental showcase.',
       keywords: ['piano', 'instrument', 'music', 'harmonium', 'keyboard', 'flute', 'वाद्य', 'संगीत', 'पियानो']
+    },
+    {
+      id: 'comp_rangoli',
+      title: 'Rangoli Competition (रांगोळी स्पर्धा)',
+      desc: 'Traditional and creative Rangoli art showcase with festive themes and colors.',
+      keywords: ['rangoli', 'raangoli', 'colors', 'art', 'रांगोळी', 'संस्कारभारती', 'रंग', 'कला']
     }
   ];
 
@@ -221,32 +230,6 @@ export function buildSearchIndex(
     });
   });
 
-  // 3b. SELECTED EMCEES (OFFICIAL HOSTS)
-  if (selectedEmcees && selectedEmcees.length > 0) {
-    selectedEmcees.forEach(e => {
-      items.push({
-        id: `emcee_${e.srNo}`,
-        title: `🎙️ ${e.name} (Selected Emcee / सूत्रसंचालक)`,
-        marathiTitle: `${e.name} - अधिकृत सूत्रसंचालक`,
-        description: `Official festival host representing Wing ${e.wing} - Flat ${e.flatNumber}. Congratulations!`,
-        category: 'Competition',
-        categoryLabel: 'निवडलेले सूत्रसंचालक',
-        categoryColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-        sectionId: 'selected-emcees',
-        icon: '🎙️',
-        timeOrDate: `Wing ${e.wing} - Flat ${e.flatNumber}`,
-        keywords: [
-          'emcee', 'host', 'anchor', 'sutrasanchalan', 'selected',
-          e.name.toLowerCase(),
-          `wing ${e.wing.toLowerCase()}`,
-          e.flatNumber,
-          `${e.wing.toLowerCase()}-${e.flatNumber}`,
-          'सूत्रसंचालक', 'निवेदक', 'निवड'
-        ]
-      });
-    });
-  }
-
   // 3c. COMPETITION WINNERS (CHAMPIONS)
   if (winners && winners.length > 0) {
     winners.forEach(w => {
@@ -270,6 +253,43 @@ export function buildSearchIndex(
           w.flatNumber,
           `${w.wing.toLowerCase()}-${w.flatNumber}`,
           'विजेता', 'विजेते', 'पारितोषिक', 'क्रमांक', 'प्रथम', 'द्वितीय', 'तृतीय'
+        ]
+      });
+    });
+  }
+
+  // 3d. COMPETITION PARTICIPANTS (LIVE NOMINEES)
+  if (participants && participants.length > 0) {
+    participants.forEach((p, idx) => {
+      const normCat = normalizeCategory(p.eventCategory);
+      const catLower = normCat.toLowerCase();
+      const icon = catLower.includes('dance') ? '💃' :
+                   catLower.includes('drawing') ? '🎨' :
+                   catLower.includes('singing') ? '🎤' :
+                   catLower.includes('shloka') ? '📖' :
+                   catLower.includes('piano') ? '🎹' : '⭐';
+
+      items.push({
+        id: `participant_${normCat}_${p.srNo}_${idx}`,
+        title: `${icon} ${p.name} (${normCat} Participant)`,
+        marathiTitle: `${p.name} - ${normCat} अधिकृत स्पर्धक`,
+        description: `Registered participant in ${normCat} from Wing ${p.wing} - Flat ${p.flatNumber}.`,
+        category: 'Nominations',
+        categoryLabel: `${normCat} स्पर्धक`,
+        categoryColor: 'bg-orange-100 text-orange-950 border-orange-300',
+        sectionId: 'competitions',
+        icon,
+        timeOrDate: `Wing ${p.wing} - Flat ${p.flatNumber}`,
+        keywords: [
+          'participant', 'nomination', 'competitor', 'entry', 'roster', 'list',
+          p.name.toLowerCase(),
+          normCat.toLowerCase(),
+          p.eventCategory.toLowerCase(),
+          `wing ${p.wing.toLowerCase()}`,
+          p.flatNumber,
+          `${p.wing.toLowerCase()}-${p.flatNumber}`,
+          `${p.wing.toLowerCase()} ${p.flatNumber}`,
+          'स्पर्धक', 'सहभाग', 'नोंदणी', 'नाव', 'emcee', 'host', 'anchor', 'सूत्रसंचालन'
         ]
       });
     });

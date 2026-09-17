@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, Phone, Laptop, Trophy, Sparkles } from 'lucide-react';
 import { COMMITTEE_DATA } from '../data/scheduleData';
 
-export const CommitteeSection: React.FC = () => {
+export const CommitteeSection: React.FC = React.memo(() => {
   return (
     <section 
       id="committee" 
@@ -168,4 +168,6 @@ export const CommitteeSection: React.FC = () => {
       </div>
     </section>
   );
-};
+});
+
+CommitteeSection.displayName = 'CommitteeSection';

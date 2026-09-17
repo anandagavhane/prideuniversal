@@ -1,18 +1,21 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  sectionName?: string;
+  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    error: null
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -20,46 +23,37 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+    console.error(`[ErrorBoundary] Caught error in ${this.props.sectionName || 'component'}:`, error, errorInfo);
   }
 
   private handleReset = () => {
-    try {
-      localStorage.removeItem('cached_accounts');
-      localStorage.removeItem('cached_nominations');
-      localStorage.removeItem('cached_notifications');
-      localStorage.removeItem('cached_sponsor_ads');
-    } catch {
-      // ignore
-    }
-    window.location.reload();
+    this.setState({ hasError: false, error: null });
   };
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className="min-h-screen bg-[#FEF7DA] flex items-center justify-center p-6 text-center">
-          <div className="max-w-md w-full bg-white rounded-3xl p-8 border-2 border-amber-400 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-4 text-3xl">
-              🌺
-            </div>
-            <h2 className="text-2xl font-black text-red-950 font-festive mb-2">
-              ॥ गणपती बाप्पा मोरया ॥
-            </h2>
-            <p className="text-sm text-amber-900 font-semibold mb-4 font-marathi">
-              काहीतरी अनपेक्षित त्रुटी आली आहे. कृपया पृष्ठ पुन्हा लोड करा.
-            </p>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              We encountered an unexpected visual rendering state. Clicking below will safely clear the local snapshot cache and refresh the festival website.
-            </p>
-            <button
-              onClick={this.handleReset}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-red-700 to-festival-saffron text-white shadow-lg hover:shadow-xl transition-all"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Reload Festival Website</span>
-            </button>
+        <div className="mx-4 my-6 p-6 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-center shadow-md">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-3">
+            <AlertTriangle className="w-6 h-6" />
           </div>
+          <h3 className="text-lg font-bold text-gray-800 mb-1">
+            {this.props.sectionName ? `${this.props.sectionName} लोड करताना समस्या आली` : 'विभाग लोड करताना समस्या आली'}
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            काही तांत्रिक अडचणीमुळे हा विभाग दाखवता आला नाही. कृपया पुन्हा प्रयत्न करा.
+          </p>
+          <button
+            onClick={this.handleReset}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm shadow hover:from-orange-600 hover:to-amber-600 active:scale-95 transition-all"
+          >
+            <RefreshCw className="w-4 h-4" />
+            पुन्हा प्रयत्न करा (Retry)
+          </button>
         </div>
       );
     }
@@ -67,4 +61,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

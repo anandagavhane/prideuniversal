@@ -108,7 +108,7 @@ export const LiveTimeAlertBanner: React.FC<LiveTimeAlertBannerProps> = ({
     const candidates: LiveAlertItem[] = [];
 
     // 1. DAILY AARTI TIMINGS (Applicable every single day)
-    // Morning Aarti: 8:00 AM (Alert window: 7:30 AM – 10:00 AM)
+    // Morning Aarti: 8:00 AM (Alert window: 7:30 AM – 9:00 AM)
     const morningAartiTime = new Date(today.getTime());
     morningAartiTime.setHours(8, 0, 0, 0);
     candidates.push({
@@ -119,12 +119,12 @@ export const LiveTimeAlertBanner: React.FC<LiveTimeAlertBannerProps> = ({
       timeStr: '8:00 AM',
       sessionTime: morningAartiTime,
       alertStart: new Date(morningAartiTime.getTime() - 30 * 60 * 1000), // -30 minutes
-      alertEnd: new Date(morningAartiTime.getTime() + 120 * 60 * 1000),  // +2 hours (120 mins)
+      alertEnd: new Date(morningAartiTime.getTime() + 60 * 60 * 1000),   // +1 hour (60 mins)
       targetSection: 'aarti',
       description: 'Daily morning prayers, Atharvashirsha pathan, and naivedya offering.'
     });
 
-    // Evening Maha Aarti: 7:30 PM (Alert window: 7:00 PM – 9:30 PM)
+    // Evening Maha Aarti: 7:30 PM (Alert window: 7:00 PM – 8:30 PM)
     const eveningAartiTime = new Date(today.getTime());
     eveningAartiTime.setHours(19, 30, 0, 0);
     candidates.push({
@@ -135,7 +135,7 @@ export const LiveTimeAlertBanner: React.FC<LiveTimeAlertBannerProps> = ({
       timeStr: '7:30 PM',
       sessionTime: eveningAartiTime,
       alertStart: new Date(eveningAartiTime.getTime() - 30 * 60 * 1000), // -30 minutes
-      alertEnd: new Date(eveningAartiTime.getTime() + 120 * 60 * 1000),  // +2 hours (120 mins)
+      alertEnd: new Date(eveningAartiTime.getTime() + 60 * 60 * 1000),   // +1 hour (60 mins)
       targetSection: 'aarti',
       description: 'Grand community Maha Aarti with traditional instruments and collective chanting.'
     });
@@ -154,7 +154,7 @@ export const LiveTimeAlertBanner: React.FC<LiveTimeAlertBannerProps> = ({
           timeStr: ev.time,
           sessionTime: sTime,
           alertStart: new Date(sTime.getTime() - 30 * 60 * 1000), // -30 minutes
-          alertEnd: new Date(sTime.getTime() + 120 * 60 * 1000),  // +2 hours (120 mins)
+          alertEnd: new Date(sTime.getTime() + 60 * 60 * 1000),   // +1 hour (60 mins)
           targetSection: 'schedule',
           description: ev.description
         });
@@ -162,7 +162,7 @@ export const LiveTimeAlertBanner: React.FC<LiveTimeAlertBannerProps> = ({
     });
 
     // Filter candidates by:
-    // now is within [alertStart, alertEnd] (auto-shows 30 min before, auto-closes after 2 hours)
+    // now is within [alertStart, alertEnd] (auto-shows 30 min before, auto-closes after 1 hour)
     // and not dismissed in this session
     const nowMs = now.getTime();
     return candidates.filter(item => {
