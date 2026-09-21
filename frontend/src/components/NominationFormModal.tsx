@@ -15,9 +15,13 @@ import {
   Layers,
   Share2,
   Copy,
-  Check
+  Check,
+  Music,
+  Link,
+  Loader2
 } from 'lucide-react';
 import { CompetitionParticipant } from '../types';
+import { submitNominationToGoogleSheet } from '../services/googleSheetsService';
 import { 
   NominationFormEntry, 
   saveLocalNomination, 
@@ -71,9 +75,11 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
   const [flatNumber, setFlatNumber] = useState('');
   const [mobile, setMobile] = useState('');
   const [ageGroup, setAgeGroup] = useState('');
+  const [trackUrl, setTrackUrl] = useState('');
   const [notes, setNotes] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [lastSubmittedEntry, setLastSubmittedEntry] = useState<NominationFormEntry | null>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -157,22 +163,39 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (autoDownloadExcel: boolean = false) => {
-    if (!validate()) return;
+  const handleSubmit = async (autoDownloadExcel: boolean = false) => {
+    if (!validate() || isSubmitting) return;
 
-    const saved = saveLocalNomination({
+    setIsSubmitting(true);
+
+    const payload = {
       name: name.trim(),
       eventCategory: selectedCategoryName,
       wing,
       flatNumber: flatNumber.trim().toUpperCase(),
       mobile: mobile.trim() || undefined,
       ageGroup: ageGroup || undefined,
+      trackUrl: trackUrl.trim() || undefined,
       notes: notes.trim() || undefined
-    });
+    };
 
+    // 1. Save locally for instant UI update & offline availability
+    const saved = saveLocalNomination(payload);
     onNominationAdded(saved);
     setLastSubmittedEntry(saved);
-    setIsSubmitted(true);
+
+    // 2. Submit directly to live Google Sheet via Apps Script Webhook
+    try {
+      await submitNominationToGoogleSheet({
+        ...payload,
+        srNo: saved.srNo
+      });
+    } catch (err) {
+      console.warn('Google Sheet background submission notice:', err);
+    } finally {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    }
 
     if (autoDownloadExcel) {
       // Immediate download of the updated workbook with the new participant
@@ -186,6 +209,7 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
     setName('');
     // Intentionally keep wing & flatNumber for fast registration of siblings/family members
     setMobile('');
+    setTrackUrl('');
     setNotes('');
     setErrors({});
     setIsSubmitted(false);
@@ -201,6 +225,7 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
       `🏢 पत्ता: Wing ${lastSubmittedEntry.wing} - Flat ${lastSubmittedEntry.flatNumber}\n` +
       (lastSubmittedEntry.mobile ? `📱 मोबाईल: ${lastSubmittedEntry.mobile}\n` : '') +
       (lastSubmittedEntry.ageGroup ? `🎂 वयोगट: ${lastSubmittedEntry.ageGroup}\n` : '') +
+      (lastSubmittedEntry.trackUrl ? `🎵 गाण्याची लिंक: ${lastSubmittedEntry.trackUrl}\n` : '') +
       `📍 प्राइड युनिव्हर्सल सोसायटी गणेशोत्सव २०२६`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -215,8 +240,9 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
       `🎉 मी प्राइड युनिव्हर्सल गणेशोत्सव २०२६ साठी नाव नोंदवले आहे!\n\n` +
       `🏆 स्पर्धा: ${lastSubmittedEntry.eventCategory}\n` +
       `👤 स्पर्धक: ${lastSubmittedEntry.name}\n` +
-      `🏢 विंग व फ्लॅट: Wing ${lastSubmittedEntry.wing}-${lastSubmittedEntry.flatNumber}\n\n` +
-      `🌺 गणपती बाप्पा मोरया! 🌺`
+      `🏢 विंग व फ्लॅट: Wing ${lastSubmittedEntry.wing}-${lastSubmittedEntry.flatNumber}\n` +
+      (lastSubmittedEntry.trackUrl ? `🎵 गाण्याची लिंक: ${lastSubmittedEntry.trackUrl}\n` : '') +
+      `\n🌺 गणपती बाप्पा मोरया! 🌺`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   };
@@ -438,15 +464,41 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
                 </div>
               </div>
 
+              {/* Song / Audio Track Link */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Music className="w-3.5 h-3.5 text-amber-700" />
+                    <span>७. गाण्याची / ऑडिओ ट्रॅक लिंक (Song / Track Link)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-semibold lowercase">(optional)</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Link className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="url"
+                    value={trackUrl}
+                    onChange={(e) => setTrackUrl(e.target.value)}
+                    placeholder="उदा. YouTube किंवा ऑडिओ / व्हिडिओ लिंक (https://...)"
+                    className="w-full text-xs font-medium pl-8 pr-3 py-2 rounded-xl border border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  डान्स, गायन किंवा नाटकासाठी गाण्याची ऑडिओ किंवा व्हिडिओ लिंक देऊ शकता.
+                </p>
+              </div>
+
               {/* Notes / Performance Details */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
-                  ७. विशेष माहिती / गाण्याचे नाव (Notes / Details)
+                  ८. विशेष माहिती (Notes / Group Details)
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="उदा. गाण्याचे नाव, स्वतःचे इन्स्ट्रुमेंट, ग्रुपमधील इतर सदस्यांची नावे इ."
+                  placeholder="उदा. गाण्याचे बोल, स्वतःचे वाद्य, ग्रुपमधील इतर सदस्यांची नावे इ."
                   rows={2}
                   className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400/40 resize-none"
                 />
@@ -466,17 +518,30 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
               <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => handleSubmit(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors border border-slate-300 cursor-pointer text-center"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 disabled:opacity-60 text-slate-800 transition-colors border border-slate-300 cursor-pointer text-center flex items-center justify-center gap-1.5"
                 >
-                  ✅ केवळ जतन करा (Save to List)
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
+                      <span>नोंदणी जतन होत आहे...</span>
+                    </>
+                  ) : (
+                    <span>✅ नोंदणी जतन करा (Save Entry)</span>
+                  )}
                 </button>
 
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-red-800 via-amber-700 to-amber-600 text-white hover:brightness-110 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-red-800 via-amber-700 to-amber-600 text-white hover:brightness-110 disabled:opacity-60 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-amber-300" />
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <FileSpreadsheet className="w-4 h-4 text-amber-300" />
+                  )}
                   <span>💾 जतन करा व Export करा (Save &amp; Export)</span>
                 </button>
               </div>
@@ -490,13 +555,13 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
 
               <div>
                 <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block mb-2">
-                  नोंदणी यशस्वीपणे नोंदवली गेली!
+                  ✅ नोंदणी थेट सेव्ह झाली!
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-festive">
                   अभिनंदन! {lastSubmittedEntry?.name}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-                  गणेशोत्सव २०२६ च्या <strong>{lastSubmittedEntry?.eventCategory}</strong> स्पर्धेसाठी तुमची नोंदणी यशस्वी झाली आहे.
+                  गणेशोत्सव २०२६ च्या <strong>{lastSubmittedEntry?.eventCategory}</strong> स्पर्धेसाठी तुमची नोंदणी यशस्वीरित्या सेव्ह झाली आहे.
                 </p>
               </div>
 
@@ -531,6 +596,20 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
                       <span className="font-medium text-slate-800">{lastSubmittedEntry.ageGroup}</span>
                     </div>
                   )}
+                  {lastSubmittedEntry.trackUrl && (
+                    <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
+                      <span className="text-slate-600 font-bold">गाण्याची लिंक:</span>
+                      <a 
+                        href={lastSubmittedEntry.trackUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-700 underline font-semibold truncate max-w-[210px] hover:text-blue-900"
+                        title={lastSubmittedEntry.trackUrl}
+                      >
+                        {lastSubmittedEntry.trackUrl}
+                      </a>
+                    </div>
+                  )}
                   {lastSubmittedEntry.notes && (
                     <div className="pt-1">
                       <span className="text-slate-600 font-bold block mb-0.5">विशेष टिप्पणी:</span>
@@ -542,26 +621,50 @@ export const NominationFormModal: React.FC<NominationFormModalProps> = ({
                 </div>
               )}
 
-              {/* Action Buttons for Excel Download */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* Action Buttons for Share, Copy & Export */}
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
                 <button
-                  onClick={() => {
-                    exportToExcel(allParticipants, localNominations, 'PrideUniversal_Nominations_2026');
-                  }}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-emerald-700 to-teal-800 text-white hover:brightness-110 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={handleWhatsAppShare}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Share registration confirmation on WhatsApp"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
-                  <span>📥 Excel (.xls) फाईल डाऊनलोड करा</span>
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>WhatsApp शेअर</span>
                 </button>
 
                 <button
+                  type="button"
+                  onClick={handleCopyDetails}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Copy confirmation receipt to clipboard"
+                >
+                  {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{isCopied ? 'कॉपी झाले! ✓' : 'पावती कॉपी'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToExcel(allParticipants, localNominations, 'PrideUniversal_Nominations_2026');
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Download nominations Excel file"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Excel (.xls)</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => {
                     exportToCsv(allParticipants, localNominations, 'PrideUniversal_Nominations_2026');
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-amber-200 hover:bg-slate-900 shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-amber-400/40"
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-amber-200 hover:bg-slate-900 shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Download nominations CSV"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>CSV डाऊनलोड (.csv)</span>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>CSV (.csv)</span>
                 </button>
               </div>
 

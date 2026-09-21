@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Image as ImageIcon, ZoomIn, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GALLERY_PHOTOS } from '../data/scheduleData';
+import { useBackButton } from '../hooks/useBackButton';
 import { GalleryPhoto } from '../types';
 
 export const GallerySection: React.FC = React.memo(() => {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  useBackButton('gallery-lightbox', selectedIndex !== null, () => setSelectedIndex(null), 85);
 
   const categories = [
     { id: 'All', label: 'All Photos (सर्व क्षणचित्रे)' },

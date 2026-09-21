@@ -53,7 +53,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, schedule }) => {
   }, [festivalTargetDate]);
 
   return (
-    <section id="home" className="relative overflow-hidden bg-gradient-to-b from-[#ffda6a]/40 via-[#feeeaa]/50 to-[#FEF7DA] pt-10 sm:pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-amber-300 scroll-mt-32">
+    <section id="home" className="relative overflow-hidden bg-gradient-to-b from-[#ffda6a]/40 via-[#feeeaa]/50 to-[#FEF7DA] pt-6 sm:pt-12 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 border-b border-amber-300 scroll-mt-32">
       {/* Ambient Festive Ganesha Background Texture */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-[0.07] mix-blend-multiply pointer-events-none"

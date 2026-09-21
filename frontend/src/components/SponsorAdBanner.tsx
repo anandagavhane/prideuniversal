@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Phone, ExternalLink, ChevronLeft, ChevronRight, Sparkles, Megaphone, RefreshCw, X, ZoomIn } from 'lucide-react';
 import { SponsorAd, DEFAULT_SPONSOR_ADS } from '../services/adService';
+import { useBackButton } from '../hooks/useBackButton';
 
 interface SponsorAdBannerProps {
   variant?: 'top' | 'mid' | 'bottom';
@@ -20,6 +21,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
+  useBackButton('sponsor-image-modal', isImageModalOpen, () => setIsImageModalOpen(false), 85);
 
   const activeAds = ads.length > 0 ? ads : DEFAULT_SPONSOR_ADS;
   const currentAd = activeAds[currentIndex % activeAds.length];
@@ -176,7 +178,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
                   title="Previous sponsor"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden xs:inline">मागे</span>
+                  <span className="hidden xs:inline">Prev</span>
                 </button>
                 <span className="text-xs font-bold text-slate-700 px-1 font-mono">
                   {currentIndex + 1} of {activeAds.length}
@@ -186,7 +188,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
                   className="px-2 py-1 rounded hover:bg-amber-200 text-slate-800 transition-colors flex items-center gap-0.5 text-xs font-bold cursor-pointer"
                   title="Next sponsor"
                 >
-                  <span className="hidden xs:inline">पुढे</span>
+                  <span className="hidden xs:inline">Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -197,7 +199,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white text-slate-800 border border-amber-300 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                title="जाहिराती रिफ्रेश करा / Refresh ads"
+                title="Refresh ads"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-amber-700 ${isRefreshing ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -378,7 +380,7 @@ export const SponsorAdBanner: React.FC<SponsorAdBannerProps> = React.memo(({
                   title="Close (Esc)"
                 >
                   <X className="w-4 h-4 text-amber-300" />
-                  <span>बंद करा / Close</span>
+                  <span>Close</span>
                 </button>
               </div>
             </div>

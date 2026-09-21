@@ -3,9 +3,11 @@ import { FALLBACK_ACCOUNTS_DATA, FALLBACK_NOMINATIONS_DATA, FALLBACK_NOTIFICATIO
 import { FESTIVAL_SCHEDULE } from '../data/scheduleData';
 import { SPONSORS_CSV_URL } from './adService';
 import { normalizeCategory, isExcludedCategory } from './nominationService';
+import { DRIVE_FOLDER_REEL_VIDEOS, DRIVE_REELS_FOLDER_ID } from '../data/driveReelsData';
+export { DRIVE_FOLDER_REEL_VIDEOS, DRIVE_REELS_FOLDER_ID };
 
 export const NOMINATIONS_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=20260911&single=true&output=csv';
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSG0X1GLr64MaUaZmCVMhtKryVFkRTjLtccLbO1VrWgWx-Y9H1U0-HI4cI9LbNVBSWaDK35xcZ9KXWt/pub?gid=614822234&single=true&output=csv';
 
 export const ACCOUNTS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmUbMzPUJKEiPO-A8VsgjmdUKSpqcM84hr-XqJcP8fz69kJme7BWhqyKrZRS55aAvCZSjR2qtYRfZY/pub?gid=0&single=true&output=csv';
@@ -32,6 +34,40 @@ export const COMPETITIONS_PARTICIPANTS_CSV_URL =
 
 export const GOOGLE_NOMINATION_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeEZ2Hpizk_ySdCG9hBmA2i22sC6FqWa9lyqI3N25huP0NLXw/viewform';
+
+// Live Google Apps Script Webhook URL to append new nominations to Google Sheet gid=614822234
+export const NOMINATION_SUBMIT_WEBHOOK_URL =
+  'https://script.google.com/macros/s/AKfycbxC0JfQ1eS2TVB5VUQ3MO0bxzakon2VK8At37kqRTsl6B8zsp1o3mZL3DmDnBgnLQG7sw/exec';
+
+/**
+ * Submit nomination directly to the Google Sheet via Google Apps Script Webhook
+ */
+export async function submitNominationToGoogleSheet(data: {
+  eventCategory: string;
+  name: string;
+  wing: string;
+  flatNumber: string;
+  srNo?: number;
+  mobile?: string;
+  trackUrl?: string;
+  notes?: string;
+  ageGroup?: string;
+}): Promise<{ success: boolean; message?: string }> {
+  try {
+    await fetch(NOMINATION_SUBMIT_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(data)
+    });
+    return { success: true, message: 'Nomination saved to Google Sheet' };
+  } catch (err) {
+    console.error('Failed to submit nomination to Google Sheet:', err);
+    return { success: false, message: String(err) };
+  }
+}
 
 export const YOUTUBE_DANCE_VIDEO_URL = 'https://www.youtube.com/watch?v=FilZjigvL1c';
 export const YOUTUBE_EMBED_URL = 'https://www.youtube-nocookie.com/embed/FilZjigvL1c?autoplay=1';
@@ -103,124 +139,105 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
 }
 
 /**
- * Fetch and parse Nominations Sheet data
+/**
+ * Dynamically compute nominations statistics (totals, wing distribution, category breakdown)
+ * directly from the competition participants list of the Google Sheet (gid=614822234).
+ */
+export function computeNominationsStatsFromParticipants(
+  participants: CompetitionParticipant[]
+): NominationsDashboardData {
+  const iconMap: Record<string, string> = {
+    'Dance': '💃',
+    'Drawing': '🎨',
+    'Singing': '🎤',
+    'Shloka': '📖',
+    'Piano Play': '🎹',
+    'Emcee / Host': '⭐',
+    'Drama': '🎭',
+    'Rangoli': '🌸',
+    'Fashion Show': '✨',
+    'Cooking': '🍲'
+  };
+
+  const validParticipants = (participants || []).filter(p => !isExcludedCategory(p.eventCategory));
+  const seenKeys = new Set<string>();
+  const uniqueParticipants: CompetitionParticipant[] = [];
+
+  for (const p of validParticipants) {
+    const normCat = normalizeCategory(p.eventCategory);
+    if (isExcludedCategory(normCat)) continue;
+    const key = `${normCat.toLowerCase()}_${(p.name || '').trim().toLowerCase()}_${(p.wing || '').trim().toLowerCase()}_${(p.flatNumber || '').trim().toLowerCase()}`;
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      uniqueParticipants.push({
+        ...p,
+        eventCategory: normCat
+      });
+    }
+  }
+
+  const total = uniqueParticipants.length;
+  let wingA = 0;
+  let wingB = 0;
+  const catMap = new Map<string, { total: number; wingA: number; wingB: number }>();
+
+  for (const p of uniqueParticipants) {
+    const cat = p.eventCategory;
+    const ex = catMap.get(cat) || { total: 0, wingA: 0, wingB: 0 };
+    ex.total += 1;
+    const w = (p.wing || '').trim().toUpperCase();
+    if (w.includes('A')) {
+      ex.wingA += 1;
+      wingA += 1;
+    } else if (w.includes('B')) {
+      ex.wingB += 1;
+      wingB += 1;
+    }
+    catMap.set(cat, ex);
+  }
+
+  const categories: NominationCategoryStat[] = Array.from(catMap.entries()).map(([cat, counts]) => ({
+    category: cat,
+    nominations: counts.total,
+    wingA: counts.wingA,
+    wingB: counts.wingB,
+    percentOfTotal: total > 0 ? `${((counts.total / total) * 100).toFixed(1)}%` : '0%',
+    icon: iconMap[cat] || '🏆'
+  })).sort((a, b) => b.nominations - a.nominations);
+
+  return {
+    totalNominations: total,
+    totalCategories: categories.length,
+    wingATotal: wingA,
+    wingBTotal: wingB,
+    wingAPercent: total > 0 ? `${((wingA / total) * 100).toFixed(1)}%` : '0%',
+    wingBPercent: total > 0 ? `${((wingB / total) * 100).toFixed(1)}%` : '0%',
+    categories,
+    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isLive: true
+  };
+}
+
+/**
+ * Fetch and calculate Nominations count and dashboard data directly from the same Google Sheet (gid=614822234)
  */
 export async function fetchNominationsData(): Promise<NominationsDashboardData> {
   try {
-    const cacheBuster = `&_t=${Date.now()}`;
-    const response = await fetchWithTimeout(`${NOMINATIONS_CSV_URL}${cacheBuster}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const csvText = await response.text();
-    const rows = parseCSV(csvText);
-
-    // Look for category rows and summary row
-    // Format in sheet:
-    // Event Category, Nominations, Wing A, Wing B, % of Total
-    const categories: NominationCategoryStat[] = [];
-    let totalNominations = 67;
-    let wingATotal = 32;
-    let wingBTotal = 35;
-    let wingAPercent = '47.8%';
-    let wingBPercent = '52.2%';
-
-    const iconMap: Record<string, string> = {
-      'Emcee': '⭐',
-      'Drawing': '🎨',
-      'Dance': '💃',
-      'Singing': '🎤',
-      'Shloka': '📖',
-      'Piano Play': '🎹',
-      'Drama': '🎭'
-    };
-
-    let inBreakdownTable = false;
-
-    for (const row of rows) {
-      // Clean empty cells
-      const cleanRow = row.filter(c => c !== '');
-      if (cleanRow.length === 0) continue;
-
-      // Summary numbers row in Google Sheet: ["67", "6", "32", "35", "47.8%", "52.2%"]
-      if (/^\d+$/.test(cleanRow[0])) {
-        const parsedTotal = parseInt(cleanRow[0], 10);
-        if (!isNaN(parsedTotal) && parsedTotal > 0) {
-          totalNominations = parsedTotal;
-          if (cleanRow.length >= 4) {
-            const wA = parseInt(cleanRow[2].replace(/[^0-9]/g, ''), 10);
-            const wB = parseInt(cleanRow[3].replace(/[^0-9]/g, ''), 10);
-            if (!isNaN(wA)) wingATotal = wA;
-            if (!isNaN(wB)) wingBTotal = wB;
-          }
-          if (cleanRow.length >= 6) {
-            wingAPercent = cleanRow[4].includes('%') ? cleanRow[4] : `${cleanRow[4]}%`;
-            wingBPercent = cleanRow[5].includes('%') ? cleanRow[5] : `${cleanRow[5]}%`;
-          }
-        }
-        continue;
-      }
-
-      if (cleanRow[0].toLowerCase().includes('event category')) {
-        inBreakdownTable = true;
-        continue;
-      }
-
-      if (!inBreakdownTable) continue;
-
-      if (cleanRow.length >= 5) {
-        const cat = cleanRow[0];
-        const noms = parseInt(cleanRow[1].replace(/[^0-9]/g, ''), 10);
-        const wingA = parseInt(cleanRow[2].replace(/[^0-9]/g, ''), 10);
-        const wingB = parseInt(cleanRow[3].replace(/[^0-9]/g, ''), 10);
-        const percent = cleanRow[4];
-
-        if (!isNaN(noms)) {
-          if (cat.toLowerCase() === 'total') {
-            totalNominations = noms;
-            wingATotal = wingA;
-            wingBTotal = wingB;
-            if (totalNominations > 0) {
-              wingAPercent = `${((wingATotal / totalNominations) * 100).toFixed(1)}%`;
-              wingBPercent = `${((wingBTotal / totalNominations) * 100).toFixed(1)}%`;
-            }
-          } else if (!/^\d+$/.test(cat.trim())) {
-            if (isExcludedCategory(cat)) continue;
-            categories.push({
-              category: cat,
-              nominations: noms,
-              wingA: isNaN(wingA) ? 0 : wingA,
-              wingB: isNaN(wingB) ? 0 : wingB,
-              percentOfTotal: percent.includes('%') ? percent : `${percent}%`,
-              icon: iconMap[cat] || '🏆'
-            });
-          }
-        }
-      }
-    }
-
-    if (categories.length > 0) {
-      const result: NominationsDashboardData = {
-        totalNominations,
-        totalCategories: categories.length,
-        wingATotal,
-        wingBTotal,
-        wingAPercent,
-        wingBPercent,
-        categories,
-        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isLive: true
-      };
+    const participants = await fetchCompetitionParticipants();
+    if (participants && participants.length > 0) {
+      const computed = computeNominationsStatsFromParticipants(participants);
       try {
-        localStorage.setItem('cached_nominations', JSON.stringify(result));
+        localStorage.setItem('cached_nominations', JSON.stringify(computed));
       } catch {
-        // safe fallback if storage is restricted
+        // ignore
       }
-      return result;
+      return computed;
     }
   } catch (err) {
-    console.warn('Could not fetch live Nominations CSV from Google Sheets, using fallback cache:', err);
+    console.warn('Could not compute nominations from participants sheet, falling back:', err);
   }
 
-  // Fallback to localStorage or static fallback
+  // Fallback to cached or fallback participants
   try {
     const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_nominations') : null;
     if (cached) {
@@ -231,7 +248,7 @@ export async function fetchNominationsData(): Promise<NominationsDashboardData> 
     // safe fallback
   }
 
-  return FALLBACK_NOMINATIONS_DATA;
+  return computeNominationsStatsFromParticipants(FALLBACK_COMPETITION_PARTICIPANTS);
 }
 
 /**
@@ -903,6 +920,7 @@ export interface DecorationSlide {
   embedUrl?: string;
   youtubeId?: string;
   driveFileId?: string;
+  category?: string;
 }
 
 export interface TempleDecorationInfo {
@@ -1020,7 +1038,7 @@ export function parseDecorationMedia(mediaUrl?: string, explicitVideoUrl?: strin
         mediaType: 'drive-video',
         driveFileId: driveId,
         embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
-        videoUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+        videoUrl: `https://drive.usercontent.google.com/download?id=${driveId}&confirm=t`,
         imageUrl: `https://lh3.googleusercontent.com/d/${driveId}`
       };
     }
@@ -1260,14 +1278,30 @@ export async function fetchTempleDecorationSlides(csvUrl: string = TEMPLE_DECORA
     }
   }
 
+  // 5. Merge all celebration videos from the user's Google Drive folder (1w5Sdy03ogdlVQLEBvVf2LpYtpgTIFOrS)
+  const existingIds = new Set<string>();
+  foundSlides.forEach((s) => {
+    if (s.driveFileId) existingIds.add(s.driveFileId);
+  });
+
+  DRIVE_FOLDER_REEL_VIDEOS.forEach((videoSlide) => {
+    if (videoSlide.driveFileId && !existingIds.has(videoSlide.driveFileId)) {
+      foundSlides.push({
+        ...videoSlide,
+        order: videoSlide.order ?? (foundSlides.length + 10)
+      });
+      existingIds.add(videoSlide.driveFileId);
+    }
+  });
+
   // Sort by order if available
   if (foundSlides.length > 0) {
     foundSlides.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     return foundSlides;
   }
 
-  // Gracefully fallback to high-res local photos
-  return DEFAULT_DECORATION_SLIDES;
+  // Gracefully fallback to high-res local photos + drive reel videos
+  return [...DEFAULT_DECORATION_SLIDES, ...DRIVE_FOLDER_REEL_VIDEOS];
 }
 
 /**
@@ -1642,6 +1676,8 @@ export async function fetchCompetitionParticipants(
     const nameIdx = headerRow.findIndex(h => h.includes('name'));
     const wingIdx = headerRow.findIndex(h => h.includes('wing'));
     const flatIdx = headerRow.findIndex(h => h.includes('flat') || h.includes('room'));
+    const mobileIdx = headerRow.findIndex(h => h.includes('mobile') || h.includes('phone') || h.includes('contact'));
+    const trackIdx = headerRow.findIndex(h => h.includes('track') || h.includes('song') || h.includes('audio') || h.includes('link') || h.includes('url'));
 
     const list: CompetitionParticipant[] = [];
 
@@ -1663,6 +1699,8 @@ export async function fetchCompetitionParticipants(
       else if (wing.includes('B')) wing = 'B';
 
       const flatNumber = flatIdx !== -1 && row[flatIdx] ? row[flatIdx].trim() : '';
+      const mobile = mobileIdx !== -1 && row[mobileIdx] ? row[mobileIdx].trim() : undefined;
+      const trackUrl = trackIdx !== -1 && row[trackIdx] ? row[trackIdx].trim() : undefined;
 
       if (name && eventCategory) {
         list.push({
@@ -1670,7 +1708,9 @@ export async function fetchCompetitionParticipants(
           srNo,
           name,
           wing,
-          flatNumber
+          flatNumber,
+          mobile,
+          trackUrl
         });
       }
     }

@@ -20,6 +20,20 @@
   }
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 /* Custom Festive Utility Styling */
 .gold-border {
   border-image: linear-gradient(to right, #f19a5c, #fcd146, #f19a5c) 1;

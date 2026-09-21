@@ -9,7 +9,7 @@ export const AARTI_LIST: AartiItem[] = [
     deity: 'श्री गणेश (Lord Ganesha)',
     composer: 'समर्थ रामदास स्वामी (Samarth Ramdas Swami)',
     icon: '🌺',
-    description: 'The most sacred and beloved primary Ganesh Aarti chanted during every morning and evening ritual.',
+    description: 'The sacred primary Ganesh Aarti chanted during every morning and evening ritual.',
     stanzas: [
       {
         type: 'stanza',
@@ -17,50 +17,50 @@ export const AARTI_LIST: AartiItem[] = [
           'सुखकर्ता दुःखहर्ता वार्ता विघ्नाची ।',
           'नुरवी पुरवी प्रेम कृपा जयाची ।',
           'सर्वांगी सुंदर उटी शेंदुराची ।',
-          'कंठी झळके माळ मुक्ताफळांची ॥ १ ॥'
+          'कंठीं झळके माळ मुक्ताफळांची ॥ १ ॥'
         ],
         english: [
           'Sukhkarta dukhharta varta vighnachi |',
           'Nurvi purvi prem krupa jayachi |',
           'Sarvangi sundar uti shendurachi |',
-          'Kanthi jhalke maal muktaphalaanchi || 1 ||'
+          'Kanthin jhalke maal muktaphalaanchi || 1 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय मंगलमूर्ती ।',
-          'दर्शनमात्रे मनकामना पुरती ॥ धृ. ॥'
+          'दर्शनमात्रे मनःकामना पुरती ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai mangalamurti |',
-          'Darshanmaatre mankamana purti || Dhru. ||'
+          'Darshanmaatre manahkaamana purti || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'रत्नखचित फरा तुज गौरीकुमरा ।',
-          'चंदनाची उटी कुमकुमकेशरा ।',
-          'हीरेजडित मुकुट शोभतो बरा ।',
-          'रुणझुणती नूपुरे चरणी घागरिया ॥ २ ॥'
+          'रत्नखचित फरा तुज गौरी-कुमरा ।',
+          'चंदनाची उटी कुंकुमकेशरा ।',
+          'हिरेजडित मुगुट शोभतो बरा ।',
+          'रुणझुणती नुपुरें चरणी घागरिया ॥ २ ॥'
         ],
         english: [
-          'Ratnakhachit phara tuj gaurikumara |',
-          'Chandanachi uti kumkumkeshara |',
-          'Heerejadit mukut shobhato bara |',
-          'Runjhunti noopure charani ghagariya || 2 ||'
+          'Ratnakhachit phara tuj gauri-kumara |',
+          'Chandanachi uti kunkumkeshara |',
+          'Hirejadit mugut shobhato bara |',
+          'Runjhunti nupuren charani ghagariya || 2 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय मंगलमूर्ती ।',
-          'दर्शनमात्रे मनकामना पुरती ॥ धृ. ॥'
+          'दर्शनमात्रे मनःकामना पुरती ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai mangalamurti |',
-          'Darshanmaatre mankamana purti || Dhru. ||'
+          'Darshanmaatre manahkaamana purti || Dhru. ||'
         ]
       },
       {
@@ -69,24 +69,24 @@ export const AARTI_LIST: AartiItem[] = [
           'लंबोदर पीतांबर फणिवरबंधना ।',
           'सरळ सोंड वक्रतुंड त्रिनयना ।',
           'दास रामाचा वाट पाहे सदना ।',
-          'संकटी पावावे निर्वाणी रक्षावे सुरवरवंदना ॥ ३ ॥'
+          'संकटी पावावें निर्वाणीं रक्षावें सुरवरवंदना ॥ ३ ॥'
         ],
         english: [
-          'Lambodar peetambar phanivarbandhana |',
+          'Lambodar peetaambar phanivarbandhana |',
           'Saral sond vakratunda trinayana |',
           'Daas ramacha vaat paahe sadana |',
-          'Sankati paavave nirvaani rakshave survarvandana || 3 ||'
+          'Sankati paavaaven nirvaaneen rakshaaven survarvandana || 3 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय मंगलमूर्ती ।',
-          'दर्शनमात्रे मनकामना पुरती ॥ धृ. ॥'
+          'दर्शनमात्रे मनःकामना पुरती ॥'
         ],
         english: [
           'Jai dev jai dev jai mangalamurti |',
-          'Darshanmaatre mankamana purti || Dhru. ||'
+          'Darshanmaatre manahkaamana purti ||'
         ]
       }
     ]
@@ -121,7 +121,7 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय श्रीशंकरा ।',
-          'आरती ओवाळू तुज कर्पूरगौरा ॥ धृ. ॥'
+          'आरती ओवाळू तुज कर्पूरगौरा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai shrishankara |',
@@ -147,7 +147,7 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय श्रीशंकरा ।',
-          'आरती ओवाळू तुज कर्पूरगौरा ॥ धृ. ॥'
+          'आरती ओवाळू तुज कर्पूरगौरा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai shrishankara |',
@@ -173,7 +173,7 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय श्रीशंकरा ।',
-          'आरती ओवाळू तुज कर्पूरगौरा ॥ धृ. ॥'
+          'आरती ओवाळू तुज कर्पूरगौरा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai shrishankara |',
@@ -199,7 +199,7 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय श्रीशंकरा ।',
-          'आरती ओवाळू तुज कर्पूरगौरा ॥ धृ. ॥'
+          'आरती ओवाळू तुज कर्पूरगौरा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai shrishankara |',
@@ -209,14 +209,14 @@ export const AARTI_LIST: AartiItem[] = [
     ]
   },
 
-  // ३. 🙏 विठ्ठल आरती - युगे अठ्ठावीस
+  // ३. 🪔 विठ्ठल आरती - युगे अठ्ठावीस
   {
     id: 'yuge-atthavees',
     title: 'Yuge Atthavees',
     marathiTitle: 'विठ्ठल आरती (युगे अठ्ठावीस)',
     deity: 'श्री विठ्ठल पांडुरंग (Lord Vitthal / Pandurang)',
     composer: 'संत नामदेव महाराज (Sant Namdev Maharaj)',
-    icon: '🙏',
+    icon: '🪔',
     description: 'Revered Pandharpur Aarti celebrating Lord Panduranga standing on the brick for Pundalik.',
     stanzas: [
       {
@@ -224,135 +224,252 @@ export const AARTI_LIST: AartiItem[] = [
         marathi: [
           'युगे अठ्ठावीस विटेवरी उभा ।',
           'वामांगी रखुमाई दिसे दिव्य शोभा ।',
-          'पुंडलिकाचे भेटी परब्रह्म आले गा ।',
-          'चरणी वाहे भीमा उद्धरी जगा ॥ १ ॥'
+          'पुंडलिकाचे भेटी परब्रह्म आलें गा ।',
+          'चरणीं वाहे भीमा उद्धरी जगा ॥ १ ॥'
         ],
         english: [
           'Yuge atthavees vitevari ubha |',
           'Vaamangi rakhumai dise divya shobha |',
-          'Pundalikaache bheti parabrahma aale ga |',
-          'Charani vaahe bheema uddhari jaga || 1 ||'
+          'Pundalikaache bheti parabrahma aalen ga |',
+          'Charaneen vaahe bheema uddhari jaga || 1 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय पांडुरंगा ।',
-          'रखुमाईवल्लभा राईच्या वल्लभा पावे जिवलगा ॥ धृ. ॥'
+          'रखुमाईवल्लभा राईचा वल्लभा पावें जिवलगा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai panduranga |',
-          'Rakhumaivallabha raichya vallabha paave jivalaga || Dhru. ||'
+          'Rakhumaivallabha raicha vallabha paaven jivalaga || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'तुळसीमाळा गळा कर ठेवुनी कटी ।',
-          'कांसे पीतांबर कस्तुरी लल्लाटी ।',
+          'तुळसी-माळा गळां कर ठेवूनि कटीं ।',
+          'कांसे पीतांबर कस्तुरि लल्लाटीं ।',
           'देव सुरवर नित्य येती भेटी ।',
-          'गरुड हनुमंत पुढे उभे राहती ॥ २ ॥'
+          'गरुड हनुमंत पुढें उभे राहती ॥ २ ॥'
         ],
         english: [
-          'Tulasimaala gala kar thevuni kati |',
-          'Kaanse peetambar kasturi lallaati |',
+          'Tulasi-maala galaan kar thevooni katin |',
+          'Kaanse peetaambar kasturi lallaatin |',
           'Dev suravar nitya yeti bheti |',
-          'Garud hanumant pudhe ubhe raahati || 2 ||'
+          'Garud hanumant pudhen ubhe raahati || 2 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय पांडुरंगा ।',
-          'रखुमाईवल्लभा राईच्या वल्लभा पावे जिवलगा ॥ धृ. ॥'
+          'रखुमाईवल्लभा राईचा वल्लभा पावें जिवलगा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai panduranga |',
-          'Rakhumaivallabha raichya vallabha paave jivalaga || Dhru. ||'
+          'Rakhumaivallabha raicha vallabha paaven jivalaga || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
           'धन्य वेणूनाद अनुक्षेत्रपाळा ।',
-          'सुवर्णाची कमळे वनमाळा गळा ।',
-          'राई रखुमाबाई सत्यभामा सकळा ।',
-          'ओवाळिती भावे सांडुनी वेल्हाळा ॥ ३ ॥'
+          'सुवर्णाचीं कमळे वनमाळा गळां ।',
+          'राही रखुमाबाई राणीया सकळा ।',
+          'ओवाळिती राजा विठोबा सांवळा ॥ ३ ॥'
         ],
         english: [
           'Dhanya venunaad anukshetrapaala |',
-          'Suvarnachi kamale vanamaala gala |',
-          'Raai rakhumaabai satyabhama sakala |',
-          'Ovaaliti bhaave saanduni velhaala || 3 ||'
+          'Suvarnacheen kamale vanamaala galaan |',
+          'Raahi rakhumaabai raaniya sakala |',
+          'Ovaaliti raja vithoba saanvala || 3 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय पांडुरंगा ।',
-          'रखुमाईवल्लभा राईच्या वल्लभा पावे जिवलगा ॥ धृ. ॥'
+          'रखुमाईवल्लभा राईचा वल्लभा पावें जिवलगा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai panduranga |',
-          'Rakhumaivallabha raichya vallabha paave jivalaga || Dhru. ||'
+          'Rakhumaivallabha raicha vallabha paaven jivalaga || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'ओवाळू आरत्या कुर्वंड्या येती ।',
-          'चंद्रभागेमाजी सोडूनिया देती ।',
-          'धुप दीप नैवेद्य पंचामृत भक्ति ।',
-          'जाणवती सकळ ही जन स्तुती ॥ ४ ॥'
+          'ओंवाळू आरत्या कुर्वंड्या येती ।',
+          'चंद्रभागेमाजी सोडूनियां देती ।',
+          'दिंड्या पताका वैष्णव नाचती ।',
+          'पंढरीचा महिमा वर्णावा किती ॥ ४ ॥'
         ],
         english: [
-          'Ovaalu aaratya kurvandya yeti |',
-          'Chandrabhagemaaji soduniya deti |',
-          'Dhup deep naivedya panchaamrut bhakti |',
-          'Jaanvati sakal hee jan stuti || 4 ||'
+          'Onvaaloo aaratya kurvandya yeti |',
+          'Chandrabhagemaaji soduniyaan deti |',
+          'Dindya pataaka vaishnav naachati |',
+          'Pandharicha mahima varnava kiti || 4 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय पांडुरंगा ।',
-          'रखुमाईवल्लभा राईच्या वल्लभा पावे जिवलगा ॥ धृ. ॥'
+          'रखुमाईवल्लभा राईचा वल्लभा पावें जिवलगा ॥ ध्रु. ॥'
         ],
         english: [
           'Jai dev jai dev jai panduranga |',
-          'Rakhumaivallabha raichya vallabha paave jivalaga || Dhru. ||'
+          'Rakhumaivallabha raicha vallabha paaven jivalaga || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
           'आषाढी कार्तिकी भक्तजन येती ।',
-          'चंद्रभागेमाजी स्नाने जे करिती ।',
-          'दर्शनहेळामात्रे तयां होय मुक्ती ।',
-          'केशवासी नामदेव भावे ओवाळिती ॥ ५ ॥'
+          'चंद्रभागेमध्यें स्नानें जे करिती ।',
+          'दर्शनहेळामात्रें तयां होय मुक्ती ।',
+          'केशवासी नामदेव भावे ओंवाळीती ॥ ५ ॥'
         ],
         english: [
           'Aashaadhi kaartiki bhaktajan yeti |',
-          'Chandrabhagemaaji snaane je kariti |',
-          'Darshanhelaamaatre tayaan hoy mukti |',
-          'Keshavaasi naamdev bhaave ovaaliti || 5 ||'
+          'Chandrabhagemadhyen snaanen je kariti |',
+          'Darshanhelaamaatren tayaan hoy mukti |',
+          'Keshavaasi naamdev bhaave onvaaliti || 5 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
           'जय देव जय देव जय पांडुरंगा ।',
-          'रखुमाईवल्लभा राईच्या वल्लभा पावे जिवलगा ॥ धृ. ॥'
+          'रखुमाईवल्लभा राईचा वल्लभा पावें जिवलगा ॥'
         ],
         english: [
           'Jai dev jai dev jai panduranga |',
-          'Rakhumaivallabha raichya vallabha paave jivalaga || Dhru. ||'
+          'Rakhumaivallabha raicha vallabha paaven jivalaga ||'
         ]
       }
     ]
   },
 
-  // ४. 🌸 देवी आरती - दुर्गे दुर्घट भारी
+  // ४. 🕉️ दत्त आरती - त्रिगुणात्मक त्रैमूर्ती
+  {
+    id: 'trigunatmak-traimurti',
+    title: 'Trigunatmak Traimurti',
+    marathiTitle: 'दत्त आरती (त्रिगुणात्मक त्रैमूर्ती)',
+    deity: 'श्री गुरुदेव दत्त (Lord Dattatreya)',
+    composer: 'संत एकनाथ महाराज व पारंपरिक (Sant Eknath Maharaj)',
+    icon: '🕉️',
+    description: 'Divine Aarti praising Lord Dattatreya, the incarnation of Brahma, Vishnu, and Maheshwara.',
+    stanzas: [
+      {
+        type: 'stanza',
+        marathi: [
+          'त्रिगुणात्मक त्रयमूर्ती दत्त हा जाणा ।',
+          'त्रिगुणी अवतार त्रैलोक्यराणा ।',
+          'नेती नेती शब्दें न ये अनुमाना ।',
+          'सुरवर मुनिजन योगी समाधी न ये ध्याना ॥ १ ॥'
+        ],
+        english: [
+          'Trigunaatmak trayamurti datta ha jaana |',
+          'Triguni avataar trailokyaraana |',
+          'Neti neti shabden na ye anumaana |',
+          'Suravar munijan yogi samaadhi na ye dhyaana || 1 ||'
+        ]
+      },
+      {
+        type: 'chorus',
+        marathi: [
+          'जय देव जय देव जय श्रीगुरुदत्ता ।',
+          'आरती ओवाळितां हरली भवचिंता ॥ ध्रु. ॥'
+        ],
+        english: [
+          'Jai dev jai dev jai shreegurudatta |',
+          'Aarti ovalitaan harali bhavachinta || Dhru. ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'सबाह्य अभ्यंतरीं तूं एक दत्त ।',
+          'अभाग्यासी कैंची कळेल ही मात ।',
+          'पराही परतली तेथे कैंचा हा हेत ।',
+          'जन्ममरणाचाही पुरलासे अंत ॥ २ ॥'
+        ],
+        english: [
+          'Sabaahya abhyantareen toon ek datta |',
+          'Abhaagyaasi kainchee kalel hee maat |',
+          'Paraahee paratali tethe kaincha ha het |',
+          'Janmamarnaachaahi purlaase ant || 2 ||'
+        ]
+      },
+      {
+        type: 'chorus',
+        marathi: [
+          'जय देव जय देव जय श्रीगुरुदत्ता ।',
+          'आरती ओवाळितां हरली भवचिंता ॥ ध्रु. ॥'
+        ],
+        english: [
+          'Jai dev jai dev jai shreegurudatta |',
+          'Aarti ovalitaan harali bhavachinta || Dhru. ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'दत्त येऊनियां उभा ठाकला ।',
+          'सद्भावे साष्टांगें प्रणिपात केला ।',
+          'प्रसन्न होऊनी आशीर्वाद दिधला ।',
+          'जन्ममरणाचा फेरा चुकवीला ॥ ३ ॥'
+        ],
+        english: [
+          'Datta yeuniyaan ubha thaakala |',
+          'Sadbhaave saashtaangen pranipaat kela |',
+          'Prasanna houni aasheervaad didhala |',
+          'Janmamarnaacha phera chukveela || 3 ||'
+        ]
+      },
+      {
+        type: 'chorus',
+        marathi: [
+          'जय देव जय देव जय श्रीगुरुदत्ता ।',
+          'आरती ओवाळितां हरली भवचिंता ॥ ध्रु. ॥'
+        ],
+        english: [
+          'Jai dev jai dev jai shreegurudatta |',
+          'Aarti ovalitaan harali bhavachinta || Dhru. ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'दत्त दत्त ऐसें लागलें ध्यान ।',
+          'हारपले मन झालें उन्मन ।',
+          'मीतूंपणाची झाली बोळवण ।',
+          'एकाजनार्दनीं श्रीदत्तध्यान ॥ ४ ॥'
+        ],
+        english: [
+          'Datta datta aisen laagalen dhyaan |',
+          'Haarpale man jhaalen unman |',
+          'Meetoompanachi jhaali bolvan |',
+          'Ekaajanaardaneen shreedattadhyaan || 4 ||'
+        ]
+      },
+      {
+        type: 'chorus',
+        marathi: [
+          'जय देव जय देव जय श्रीगुरुदत्ता ।',
+          'आरती ओवाळितां हरली भवचिंता ॥'
+        ],
+        english: [
+          'Jai dev jai dev jai shreegurudatta |',
+          'Aarti ovalitaan harali bhavachinta ||'
+        ]
+      }
+    ]
+  },
+
+  // ५. 🌸 देवी आरती - दुर्गे दुर्घट भारी
   {
     id: 'durge-durghat',
     title: 'Durge Durghat Bhari',
@@ -360,268 +477,206 @@ export const AARTI_LIST: AartiItem[] = [
     deity: 'आदिशक्ती दुर्गा / पार्वती (Goddess Durga)',
     composer: 'समर्थ रामदास स्वामी (Samarth Ramdas Swami)',
     icon: '🌸',
-    description: 'Powerful invocation to the Divine Mother Mahishasuramardini for removing sorrow and obstacles.',
+    description: 'Powerful invocation to the Divine Mother Mahishasuramathini for removing sorrow and obstacles.',
     stanzas: [
       {
         type: 'stanza',
         marathi: [
-          'दुर्गे दुर्घट भारी तुजविण संसारी ।',
-          'अनाथनाथे अंबे करुणा विस्तारी ।',
-          'वारी वारी जन्ममरणाते वारी ।',
-          'हारी पडलो आता संकट निवारी ॥ १ ॥'
+          'दुर्गे दुर्घट भारी तुजविण संसारीं ।',
+          'अनाथनाथे अंबे करुणा विस्तारीं ।',
+          'वारी वारीं जन्म-मरणाते वारीं ।',
+          'हारीं पडलो आता संकट नीवारीं ॥ १ ॥'
         ],
         english: [
-          'Durge durghat bhaari tujvin sansaari |',
-          'Anaathnaathe ambe karuna vistaari |',
-          'Vaari vaari janmamarnaate vaari |',
-          'Haari padlo aata sankat nivaari || 1 ||'
+          'Durge durghat bhaari tujvin sansaareen |',
+          'Anaathnaathe ambe karuna vistaareen |',
+          'Vaari vaareen janma-marnaate vaareen |',
+          'Haareen padlo aata sankat neevaareen || 1 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
-          'जय देवी जय देवी जय महिषासुरमर्दिनी ।',
-          'सुरवरईश्वरवरदे तारक संजीवनी ॥ धृ. ॥'
+          'जय देवी जय देवी जय महिषासुरमथिनी ।',
+          'सुरवरईश्वरवरदे तारक संजिवनी ॥ ध्रु. ॥'
         ],
         english: [
-          'Jai devi jai devi jai mahishaasuramardini |',
-          'Suravareeshwaravarde taarak sanjeevani || Dhru. ||'
+          'Jai devi jai devi jai mahishaasuramathini |',
+          'Suravareeshwaravarde taarak sanjivani || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'त्रिभुवनभुवनी पाहता तुज ऐसी नाही ।',
-          'चारी श्रमले परंतु न बोलवे काही ।',
-          'साही विवाद करिता पडले प्रवाही ।',
+          'त्रिभुवनभुवनी पाहता तुजऐशी नाहीं ।',
+          'चारी श्रमले परंतु न बोलवे कांहीं ।',
+          'साही विवाद करिता पडिले प्रवाही ।',
           'ते तू भक्तालागी पावसि लवलाही ॥ २ ॥'
         ],
         english: [
-          'Tribhuvanbhuvani paahta tuj aisi naahi |',
-          'Chaari shramale parantu na bolve kaahi |',
-          'Saahi vivaad karita padle pravaahi |',
+          'Tribhuvanbhuvani paahta tuj-aishee naaheen |',
+          'Chaari shramale parantu na bolve kaanheen |',
+          'Saahi vivaad karita padile pravaahi |',
           'Te tu bhaktaalaagi paavasi lavlaahi || 2 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
-          'जय देवी जय देवी जय महिषासुरमर्दिनी ।',
-          'सुरवरईश्वरवरदे तारक संजीवनी ॥ धृ. ॥'
+          'जय देवी जय देवी जय महिषासुरमथिनी ।',
+          'सुरवरईश्वरवरदे तारक संजिवनी ॥ ध्रु. ॥'
         ],
         english: [
-          'Jai devi jai devi jai mahishaasuramardini |',
-          'Suravareeshwaravarde taarak sanjeevani || Dhru. ||'
+          'Jai devi jai devi jai mahishaasuramathini |',
+          'Suravareeshwaravarde taarak sanjivani || Dhru. ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
           'प्रसन्नवदने प्रसन्न होसी निजदासा ।',
-          'क्लेशापासोनि सोडी तोडी भवपाशा ।',
-          'अंबे तुजवाचून कोण पुरवील आशा ।',
-          'नरहरि तल्लीन झाला पदपंकजलेशा ॥ ३ ॥'
+          'क्लेशापासुनि सोडविं तोडीं भवपाशां ।',
+          'अंबे तुजवाचून कोण पुरविल आशा ।',
+          'नरहरी तल्लिन झाला पदपंकजलेशा ॥ ३ ॥'
         ],
         english: [
           'Prasannavadane prasanna hosi nijdaasa |',
-          'Kleshaapasoni sodi todi bhavpaasha |',
-          'Ambe tujvaachun kon purveel aasha |',
-          'Narahari talleen jhaala padpankajlesha || 3 ||'
+          'Kleshaapasuni sodavin todeen bhavpaashaan |',
+          'Ambe tujvaachun kon purvil aasha |',
+          'Narahari tallin jhaala padpankajlesha || 3 ||'
         ]
       },
       {
         type: 'chorus',
         marathi: [
-          'जय देवी जय देवी जय महिषासुरमर्दिनी ।',
-          'सुरवरईश्वरवरदे तारक संजीवनी ॥ धृ. ॥'
+          'जय देवी जय देवी जय महिषासुरमथिनी ।',
+          'सुरवरईश्वरवरदे तारक संजिवनी ॥'
         ],
         english: [
-          'Jai devi jai devi jai mahishaasuramardini |',
-          'Suravareeshwaravarde taarak sanjeevani || Dhru. ||'
+          'Jai devi jai devi jai mahishaasuramathini |',
+          'Suravareeshwaravarde taarak sanjivani ||'
         ]
       }
     ]
   },
 
-  // ५. 🕉️ दत्त आरती - त्रिगुणात्मक त्रैमूर्ती
+  // ६. 🕯️ कर्पूरारती
   {
-    id: 'trigunatmak-traimurti',
-    title: 'Trigunatmak Traimurti',
-    marathiTitle: 'दत्त आरती (त्रिगुणात्मक त्रैमूर्ती)',
-    deity: 'श्री गुरुदेव दत्त (Lord Dattatreya)',
-    composer: 'पारंपरिक (Traditional Datta Sampradaya)',
-    icon: '🕉️',
-    description: 'Divine Aarti praising Lord Dattatreya, the incarnation of Brahma, Vishnu, and Maheshwara.',
+    id: 'karpooraarti',
+    title: 'Karpurarati',
+    marathiTitle: 'कर्पूरारती (कर्पूरगौरा करुणावतारा)',
+    deity: 'महादेव शिव व भवानी (Lord Shiva & Bhavani)',
+    composer: 'पारंपरिक (Traditional)',
+    icon: '🕯️',
+    description: 'Sacred Karpura (Camphor) Aarti chanted during the offering of camphor flame.',
     stanzas: [
       {
         type: 'stanza',
         marathi: [
-          'त्रिगुणात्मक त्रैमूर्ती दत्त हा जाणा ।',
-          'त्रिगुणी अवतार त्रैलोक्यराणा ।',
-          'नेती नेती शब्द न ये अनुमाना ।',
-          'सुरवर मुनिजन वंदिती चरणा ॥ १ ॥'
+          'कर्पूरगौरा करुणावतारा ।',
+          'संसारसारा भुजगेंद्रहारा ।',
+          'सदा रहासी हृदयारविंदी ।',
+          'भव भवानीसह तूज वंदी ॥ १ ॥'
         ],
         english: [
-          'Trigunaatmak traimurti datta ha jaana |',
-          'Triguni avataar trailokyaraana |',
-          'Neti neti shabd na ye anumaana |',
-          'Suravar munijan vanditi charana || 1 ||'
-        ]
-      },
-      {
-        type: 'chorus',
-        marathi: [
-          'जय देव जय देव जय श्री गुरुदत्ता ।',
-          'आरती ओवाळू सद्गुरु चित्ता ॥ धृ. ॥'
-        ],
-        english: [
-          'Jai dev jai dev jai shri gurudatta |',
-          'Aarti ovaloo sadguru chitta || Dhru. ||'
-        ]
-      },
-      {
-        type: 'stanza',
-        marathi: [
-          'कौपीनधारी दंड कमंडलू हाती ।',
-          'गळा रुद्राक्ष माळा भस्मलेप अंगा ।',
-          'माथा जटाजूट चंद्रमौळी गंगा ।',
-          'दर्शनमात्रे पळे भवभय चिंता ॥ २ ॥'
-        ],
-        english: [
-          'Kaupeendhari dand kamandalu haati |',
-          'Gala rudraaksha maala bhasmalep anga |',
-          'Maatha jataajoot chandramauli ganga |',
-          'Darshanmaatre pale bhavbhay chinta || 2 ||'
-        ]
-      },
-      {
-        type: 'chorus',
-        marathi: [
-          'जय देव जय देव जय श्री गुरुदत्ता ।',
-          'आरती ओवाळू सद्गुरु चित्ता ॥ धृ. ॥'
-        ],
-        english: [
-          'Jai dev jai dev jai shri gurudatta |',
-          'Aarti ovaloo sadguru chitta || Dhru. ||'
-        ]
-      },
-      {
-        type: 'stanza',
-        marathi: [
-          'सबाह्य अभ्यंतरी तू एक व्यापक ।',
-          'अलक्ष निर्गुण तू भक्तांचा पालक ।',
-          'माया मोह जाळुनी करी तू सुखकारक ।',
-          'तुजविण आम्हांसी कोण उद्धारक ॥ ३ ॥'
-        ],
-        english: [
-          'Sabaahya abhyantari tu ek vyaapak |',
-          'Alaksha nirgun tu bhaktaancha paalak |',
-          'Maaya moh jaaluni kari tu sukhkaarak |',
-          'Tujvin aamhaansi kon uddhaarak || 3 ||'
-        ]
-      },
-      {
-        type: 'chorus',
-        marathi: [
-          'जय देव जय देव जय श्री गुरुदत्ता ।',
-          'आरती ओवाळू सद्गुरु चित्ता ॥ धृ. ॥'
-        ],
-        english: [
-          'Jai dev jai dev jai shri gurudatta |',
-          'Aarti ovaloo sadguru chitta || Dhru. ||'
-        ]
-      },
-      {
-        type: 'stanza',
-        marathi: [
-          'दत्त येऊनिया उभा ठाकला ।',
-          'सद्भावे चरणी प्रणिपात केला ।',
-          'प्रसन्न होऊनी आशीर्वाद दिधला ।',
-          'जन्ममरणाचा फेरा चुकविला ॥ ४ ॥'
-        ],
-        english: [
-          'Datta yeuniya ubha thaakala |',
-          'Sadbhaave charani pranipaat kela |',
-          'Prasanna houni aasheervaad didhala |',
-          'Janmamarnaacha phera chukvila || 4 ||'
-        ]
-      },
-      {
-        type: 'chorus',
-        marathi: [
-          'जय देव जय देव जय श्री गुरुदत्ता ।',
-          'आरती ओवाळू सद्गुरु चित्ता ॥ धृ. ॥'
-        ],
-        english: [
-          'Jai dev jai dev jai shri gurudatta |',
-          'Aarti ovaloo sadguru chitta || Dhru. ||'
+          'Karpoorgoura karunaavatara |',
+          'Sansaarsaara bhujagendrahaara |',
+          'Sada rahaasi hridayaarvindi |',
+          'Bhava bhavaaneesaha tooj vandi || 1 ||'
         ]
       }
     ]
   },
 
-  // ६. 🙏 प्रार्थना - घालीन लोटांगण
+  // ७. 🙏 प्रार्थना श्लोक - घालीन लोटांगण
   {
     id: 'ghalin-lotangan',
-    title: 'Prarthana (Ghalin Lotangan)',
-    marathiTitle: 'प्रार्थना (घालीन लोटांगण)',
+    title: 'Prarthana Shloka (Ghalin Lotangan)',
+    marathiTitle: 'प्रार्थना श्लोक (घालीन लोटांगण)',
     deity: 'सर्व देव (All Deities / Lord Ganesha & Narayana)',
-    composer: 'संत नामदेव (Sant Namdev)',
+    composer: 'संत नामदेव व पारंपरिक (Sant Namdev & Traditional)',
     icon: '🙏',
-    description: 'Devotional surrender and prarthana recited at the conclusion of Aarti rituals.',
+    description: 'आरती संपल्यावर लगेच म्हणावयाची नम्र प्रार्थना व समर्पण श्लोक.',
     stanzas: [
       {
         type: 'stanza',
         marathi: [
-          'घालीन लोटांगण वंदीन चरण । डोळ्यांनी पाहीन रूप तुझे ।',
-          'प्रेमे आलिंगिन आनंदे पूजिन । भावे ओवाळीन म्हणे नामा ॥ १ ॥'
+          'घालीन लोटांगण, वंदीन चरण ।',
+          'डोळ्यांनीं पाहिन रूप तुझें ।',
+          'प्रेमें आलिंगिन आनंदें पूजिन ।',
+          'भावें ओवाळिन म्हणे नामा ॥ १ ॥'
         ],
         english: [
-          'Ghaalin lotaangan vandin charan | Dolyanni paahin roop tujhe |',
-          'Preme aalingin aanande poojin | Bhaave ovaalin mhane naama || 1 ||'
+          'Ghaalin lotaangan, vandin charan |',
+          'Dolyannin paahin roop tujhen |',
+          'Premen aalingin aananden poojin |',
+          'Bhaaven onvaalin mhane naama || 1 ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'त्वमेव माता च पिता त्वमेव । त्वमेव बंधुश्च सखा त्वमेव ।',
-          'त्वमेव विद्या द्रविणं त्वमेव । त्वमेव सर्वं मम देवदेव ॥ २ ॥'
+          'त्वमेव माता च पिता त्वमेव ।',
+          'त्वमेव बंधुश्च सखा त्वमेव ।',
+          'त्वमेव विद्या द्रविणं त्वमेव ।',
+          'त्वमेव सर्वं मम देवदेव ॥ २ ॥'
         ],
         english: [
-          'Twameva mata cha pita twameva | Twameva bandhushcha sakha twameva |',
-          'Twameva vidya dravinam twameva | Twameva sarvam mama devadeva || 2 ||'
+          'Twameva maata cha pita twameva |',
+          'Twameva bandhushcha sakha twameva |',
+          'Twameva vidya dravinam twameva |',
+          'Twameva sarvam mama devadeva || 2 ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'कायेन वाचा मनसेंद्रियैर्वा । बुद्ध्यात्मना वा प्रकृतिस्वभावात् ।',
-          'करोमि यद्यत् सकलं परस्मै । नारायणायेति समर्पयामि ॥ ३ ॥'
+          'कायेन वाचा मनसेंद्रियैर्वा ।',
+          'बुद्ध्यात्मना वा प्रकृतिस्वभावात् ।',
+          'करोमि यद्यत्सकलं परस्मै ।',
+          'नारायणायेति समर्पयामि ॥ ३ ॥'
         ],
         english: [
-          'Kayena vaacha manasendriyairva | Buddhyatmana va prakritiswabhavaat |',
-          'Karomi yadyat sakalam parasmai | Naaraayanaayeti samarpayaami || 3 ||'
+          'Kaayena vaacha manasendriyairva |',
+          'Buddhyaatmana va prakritiswabhavaat |',
+          'Karomi yadyatsakalam parasmai |',
+          'Naaraayanaayeti samarpayaami || 3 ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'हरे राम हरे राम राम राम हरे हरे ।',
-          'हरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे ॥'
+          'अच्युतं केशवं रामनारायणं ।',
+          'कृष्णदामोदरं वासुदेवं हरिम् ।',
+          'श्रीधरं माधवं गोपिकावल्लभं ।',
+          'जानकीनायकं रामचंद्रं भजे ॥ ४ ॥'
         ],
         english: [
-          'Hare rama hare rama rama rama hare hare |',
-          'Hare krishna hare krishna krishna krishna hare hare ||'
+          'Achyutam keshavam raamanaaraayanam |',
+          'Krishnadaamodaram vaasudevam harim |',
+          'Shreedharam maadhavam gopikaavallabham |',
+          'Jaanakeenaayakam raamachandram bhaje || 4 ||'
+        ]
+      },
+      {
+        type: 'stanza',
+        marathi: [
+          'हरे राम हरे राम, राम राम हरे हरे ।',
+          'हरे कृष्ण हरे कृष्ण, कृष्ण कृष्ण हरे हरे ॥ ५ ॥'
+        ],
+        english: [
+          'Hare rama hare rama, rama rama hare hare |',
+          'Hare krishna hare krishna, krishna krishna hare hare || 5 ||'
         ]
       }
     ]
   },
 
-  // ७. 🌸 मंत्रपुष्पांजली
+  // ८. 🌸 मंत्रपुष्पांजली
   {
     id: 'mantra-pushpanjali',
     title: 'Mantra Pushpanjali',
-    marathiTitle: 'मंत्रपुष्पांजली (वेदोक्त प्रार्थना)',
+    marathiTitle: 'मंत्रपुष्पांजली (वेदोक्त मंत्र)',
     deity: 'श्री गणेश व सर्व देव (Vedic Divine Invocation)',
     composer: 'ऋग्वेद / यजुर्वेद (Vedic Suktas)',
     icon: '🌸',
@@ -631,7 +686,7 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'stanza',
         marathi: [
           'ॐ यज्ञेन यज्ञमयजन्त देवास्तानि धर्माणि प्रथमान्यासन् ।',
-          'ते ह नाकं महिमान: सचन्त यत्र पूर्वे साध्या: सन्ति देवा: ॥'
+          'ते ह नाकं महिमानः सचंत यत्र पूर्वे साध्याः सन्ति देवाः ॥'
         ],
         english: [
           'Om yajnena yajnamayajanta devastaani dharmaani prathamaanyaasan |',
@@ -642,8 +697,8 @@ export const AARTI_LIST: AartiItem[] = [
         type: 'stanza',
         marathi: [
           'ॐ राजाधिराजाय प्रसह्यसाहिने नमो वयं वैश्रवणाय कुर्महे ।',
-          'स मे कामान् कामकामाय मह्यम् कामेश्वरो वैश्रवणो ददातु ।',
-          'कुबेराय वैश्रवणाय महाराजाय नम: ॥'
+          'स मे कामान् कामकामाय मह्यं कामेश्वरो वैश्रवणो ददातु ।',
+          'कुबेराय वैश्रवणाय महाराजाय नमः ॥'
         ],
         english: [
           'Om raajaadhiraajaaya prasahyasahine namo vayam vaishravanaaya kurmahe |',
@@ -654,20 +709,20 @@ export const AARTI_LIST: AartiItem[] = [
       {
         type: 'stanza',
         marathi: [
-          'ॐ स्वस्ति साम्राज्यं भौज्यं स्वाराज्यं वैराज्यं पारमेष्ठ्यं राज्यं माहाराज्यमाधिपत्यमयं समन्तपर्यायी स्यात् सार्वभौम: सार्वायुष आन्तादापरार्धात् पृथिव्यै समुद्रपर्यन्ताया एकराळिति ॥'
+          'ॐ स्वस्ति । साम्राज्यं, भौज्यं, स्वाराज्यं, वैराज्यं, पारमेष्ठ्यं, राज्यं, महाराज्यमाधिपत्यमयं समन्तपर्यायी स्यात् सार्वभौमः सार्वायुष आतादापरार्धात् पृथिव्यै समुद्रपर्यंताया एकराळिति ॥'
         ],
         english: [
-          'Om swasti saamraajyam bhaujyam swaaraajyam vairaajyam paarameshthyam raajyam maahaaraajyamaadhipatyamayam samantaparyaayi syaat saarvabhaumaha saarvaayusha aantaadaaparaardhaat prithivyai samudraparyantaayaa ekaraaliti ||'
+          'Om swasti | Saamraajyam, bhaujyam, swaaraajyam, vairaajyam, paarameshthyam, raajyam, mahaaraajyamaadhipatyamayam samantaparyaayi syaat saarvabhaumaha saarvaayusha aataadaaparaardhaat prithivyai samudraparyantaayaa ekaraaliti ||'
         ]
       },
       {
         type: 'stanza',
         marathi: [
-          'तदप्येष श्लोकोऽभिगीतो मरुत: परिवेष्टारो मरुत्तस्यावसन्गृहे ।',
-          'आविक्षितस्य कामप्रेर्विश्वेदेवा: सभासद इति ॥'
+          'तदप्येषश्लोकोऽभिगीतो मरुतः परिवेष्टारो मरुत्तस्यावसन् गृहे ।',
+          'आविक्षितस्य कामप्रेर्विश्वेदेवा सभासद इति ॥'
         ],
         english: [
-          'Tadapyesha shloko-bhigeeto marutaha pariveshtaaro maruttasyaavasangrihe |',
+          'Tadapyeshashloko-bhigeeto marutaha pariveshtaaro maruttasyaavasan grihe |',
           'Aavikshitasya kaamaprervishwedevaaha sabhaasada iti ||'
         ]
       },
@@ -685,4 +740,3 @@ export const AARTI_LIST: AartiItem[] = [
     ]
   }
 ];
-

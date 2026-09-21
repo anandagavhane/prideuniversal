@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Pause, Play, Sparkles, RefreshCw, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { fetchDriveFolderPhotos } from '../services/googleSheetsService';
+import { useBackButton } from '../hooks/useBackButton';
 
 export interface CarouselSlide {
   id: string;
@@ -176,6 +177,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAutoZoom, setIsAutoZoom] = useState(true);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  useBackButton('hero-zoom-modal', isZoomModalOpen, () => setIsZoomModalOpen(false), 85);
   const [modalZoomScale, setModalZoomScale] = useState(1);
 
   const loadPhotos = useCallback(async () => {
@@ -189,7 +191,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
           thumbnailUrl: p.thumbnailUrl,
           title: p.title || `गणेशोत्सव २०२६ क्षणचित्र #${idx + 1}`,
           subtitle: p.subtitle || 'प्राइड युनिव्हर्सल गणेशोत्सव २०२६ थेट क्षणचित्रे',
-          category: 'Drive',
+          category: 'Live',
           badge: '📸 उत्सव २०२६'
         }));
         setActiveSlides(mappedSlides);
@@ -358,7 +360,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
             setModalZoomScale(1);
             setIsZoomModalOpen(true);
           }}
-          title="मोठे करून पहा / Click to Zoom Fullscreen"
+          title="Click to Zoom Fullscreen"
         >
           <img
             key={`${currentSlide.id}-${imageFallbacks[currentSlide.id] || 'primary'}`}
@@ -403,7 +405,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
                   ? 'bg-amber-400 text-red-950 border-amber-300 font-black shadow-amber-400/20' 
                   : 'bg-black/80 text-amber-200/80 border-amber-400/30 hover:text-white'
               }`}
-              title={isAutoZoom ? 'Auto Zoom चालू आहे (क्लिक करून थांबवा)' : 'Auto Zoom बंद आहे (क्लिक करून चालू करा)'}
+              title={isAutoZoom ? 'Auto Zoom ON (Click to toggle)' : 'Auto Zoom OFF (Click to toggle)'}
               aria-label="Toggle Auto Zoom"
             >
               <ZoomIn className={`w-3.5 h-3.5 ${isAutoZoom ? 'text-red-950 animate-pulse' : 'text-amber-300'}`} />
@@ -415,7 +417,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
               className={`p-1.5 sm:p-2 rounded-full bg-black/80 backdrop-blur-md hover:bg-amber-400 hover:text-red-950 text-amber-200 border border-amber-400/30 shadow-xl transition-all cursor-pointer ${
                 isSyncing ? 'animate-spin text-amber-300' : ''
               }`}
-              title="नवीन फोटो रिफ्रेश करा / Refresh photos"
+              title="Refresh photos"
               aria-label="Refresh photos"
             >
               <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -467,8 +469,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
             {currentSlide.subtitle}
           </p>
 
-          {/* Dots Pagination - cleanly scrollable if many slides */}
-          <div className="flex items-center gap-1 sm:gap-1.5 max-w-full overflow-x-auto py-1 scrollbar-none">
+          {/* Dots Pagination - cleanly scrollable without visible scrollbar */}
+          <div 
+            className="flex items-center gap-1 sm:gap-1.5 max-w-full overflow-x-auto py-1 no-scrollbar select-none"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
             {activeSlides.map((slide, idx) => (
               <button
                 key={slide.id}

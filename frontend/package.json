@@ -1,7 +1,7 @@
 {
   "name": "pride-universal-ganapati-2026",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@capacitor/android": "8.3.1",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/core": "8.3.1",
     "@capacitor/ios": "8.3.1",
     "@capacitor/local-notifications": "8.3.1",

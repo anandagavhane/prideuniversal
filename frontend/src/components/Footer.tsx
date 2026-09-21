@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-b from-[#FEF7DA] via-[#feeeaa]/60 to-[#ffda6a]/40 border-t-2 border-amber-300 pt-12 pb-8 px-4 sm:px-6 lg:px-8 text-slate-800">
+    <footer className="relative overflow-hidden bg-gradient-to-b from-[#FEF7DA] via-[#feeeaa]/60 to-[#ffda6a]/40 border-t-2 border-amber-300 pt-12 pb-[max(calc(6.5rem+env(safe-area-inset-bottom,0px)),4rem)] sm:pb-8 px-4 sm:px-6 lg:px-8 text-slate-800">
       {/* Light Ambient Festive Ganapati Background Texture */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-[0.05] mix-blend-multiply pointer-events-none"

@@ -228,9 +228,9 @@ export const AartiSection: React.FC = React.memo(() => {
             </div>
           </div>
 
-          {/* Aarti Selection Tabs Strip */}
-          <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-50/80 via-orange-50/40 to-amber-50/80 border-b border-amber-200 overflow-x-auto scrollbar-thin">
-            <div className="flex items-center gap-2 min-w-max pb-1 sm:pb-0">
+          {/* Aarti Selection Tabs Grid (Fully Visible on Screen in Mobile & Desktop) */}
+          <div className="p-3 sm:p-5 bg-gradient-to-r from-amber-50/80 via-orange-50/40 to-amber-50/80 border-b border-amber-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap items-center gap-2 sm:gap-2.5">
               {AARTI_LIST.map((aarti, idx) => {
                 const isSelected = aarti.id === selectedAartiId;
                 const tabTitle = aarti.marathiTitle
@@ -242,14 +242,14 @@ export const AartiSection: React.FC = React.memo(() => {
                   <button
                     key={aarti.id}
                     onClick={() => setSelectedAartiId(aarti.id)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer ${
+                    className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-r from-red-800 to-festival-saffron text-white shadow-md scale-105 border-2 border-amber-300'
+                        ? 'bg-gradient-to-r from-red-800 to-festival-saffron text-white shadow-md scale-[1.02] border-2 border-amber-300'
                         : 'bg-white hover:bg-amber-100/80 text-slate-800 border border-amber-200'
                     }`}
                   >
-                    <span className="text-base leading-none">{aarti.icon}</span>
-                    <span className="font-marathi font-bold">{idx + 1}. {tabTitle}</span>
+                    <span className="text-sm sm:text-base leading-none flex-shrink-0">{aarti.icon}</span>
+                    <span className="font-marathi font-bold truncate">{idx + 1}. {tabTitle}</span>
                   </button>
                 );
               })}

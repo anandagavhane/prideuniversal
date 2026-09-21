@@ -21,6 +21,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { APP_VERSION, APP_BUILD } from '../version';
+import { useBackButton } from '../hooks/useBackButton';
 
 interface NavbarProps {
   activeTab: string;
@@ -97,6 +98,32 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsEventsMenuOpen(false);
     setIsPinnedOpen(false);
   };
+
+  const [isAtTop, setIsAtTop] = useState(true);
+
+  // Close mobile drawer and events menu on hardware back button
+  useBackButton('mobile-menu', mobileMenuOpen, () => setMobileMenuOpen(false), 60);
+  useBackButton('events-menu', isEventsMenuOpen, () => closeDropdown(), 50);
+
+  // Monitor scroll position: Hide menu bar when scrolled away from top, show only when at top (scrollY <= 30)
+  useEffect(() => {
+    const handleScroll = () => {
+      const atTop = window.scrollY <= 30;
+      setIsAtTop(atTop);
+      if (!atTop) {
+        setMobileMenuOpen(false);
+        setIsEventsMenuOpen(false);
+        setIsPinnedOpen(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Close desktop dropdown on outside click or escape
   useEffect(() => {
@@ -183,9 +210,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-[#F5AF19] via-[#FFDC64] to-[#F5AF19] border-b-2 border-amber-600/50 shadow-[0_4px_20px_rgba(245,175,25,0.35)] transition-all">
-      {/* Top Auspicious Announcement Bar */}
-      <div className="bg-gradient-to-r from-red-950 via-red-900 to-red-950 text-amber-100 text-xs sm:text-sm py-1.5 px-4 font-medium border-b border-amber-400/20">
+    <header className={`sticky top-0 z-50 bg-gradient-to-r from-[#F5AF19] via-[#FFDC64] to-[#F5AF19] border-b-2 border-amber-600/50 shadow-[0_4px_20px_rgba(245,175,25,0.35)] transition-all duration-300 ease-in-out ${
+      isAtTop 
+        ? 'translate-y-0 opacity-100 pointer-events-auto' 
+        : '-translate-y-full opacity-0 pointer-events-none'
+    }`}>
+      {/* Top Auspicious Announcement Bar with safe-area top padding for mobile bezels/notches */}
+      <div className="bg-gradient-to-r from-red-950 via-red-900 to-red-950 text-amber-100 text-xs sm:text-sm pt-[max(env(safe-area-inset-top,0px),10px)] pb-2 sm:py-1.5 px-3 sm:px-4 font-medium border-b border-amber-400/20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <span className="truncate flex items-center gap-1.5 font-marathi">
             <span>॥ गणपती बाप्पा मोरया ॥</span>

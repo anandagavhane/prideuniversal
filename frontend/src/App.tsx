@@ -17,6 +17,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { getLocalNominations, mergeParticipantsWithLocalNominations, NominationFormEntry, normalizeCategory, isExcludedCategory } from './services/nominationService';
 import { fetchSponsorAds, SponsorAd, DEFAULT_SPONSOR_ADS } from './services/adService';
+import { initializeBackButtonService } from './services/backButtonService';
+import { useBackButton } from './hooks/useBackButton';
 import { Capacitor } from '@capacitor/core';
 import { 
   fetchAccountsData, 
@@ -220,6 +222,12 @@ export function App() {
   const [lastSyncNotice, setLastSyncNotice] = useState<string>('');
 
   const SYNC_INTERVAL = 15; // 15 seconds auto-sync
+
+  // Register mobile hardware and browser back-button handlers for top-level modals
+  useBackButton('nomination-modal', isNominationModalOpen, () => setIsNominationModalOpen(false), 100);
+  useBackButton('notification-modal', isNotificationModalOpen, () => setIsNotificationModalOpen(false), 90);
+  useBackButton('video-modal', isVideoModalOpen, () => setIsVideoModalOpen(false), 80);
+  useBackButton('search-modal', isSearchOpen, () => setIsSearchOpen(false), 70);
 
   // Function to load all Google Sheets data sources (Accounts, Nominations, Notifications, Sponsor Ads)
   const loadSheetsData = useCallback(async (showLoading = false) => {
@@ -494,6 +502,26 @@ export function App() {
     }
   };
 
+  // Initialize hardware, gesture, and browser back-button listener
+  useEffect(() => {
+    const cleanup = initializeBackButtonService({
+      isAtHome: () => {
+        return activeTab === 'home' && (typeof window !== 'undefined' ? window.scrollY <= 40 : true);
+      },
+      onNavigateHome: () => {
+        handleNavigate('home');
+      },
+      showToast: (msg: string) => {
+        setLastSyncNotice(msg);
+        setTimeout(() => setLastSyncNotice(''), 2500);
+      }
+    });
+
+    return () => {
+      cleanup();
+    };
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-[#FEF7DA] flex flex-col font-sans text-slate-800">
       {/* Sticky Header Navigation */}
@@ -706,7 +734,7 @@ export function App() {
 
       {/* Real-time Google Sheets Auto-Sync Toast Notification */}
       {lastSyncNotice && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 bg-slate-900/95 text-amber-200 text-xs px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 border border-amber-400/40 backdrop-blur-md transition-all animate-bounce">
+        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-6 z-50 bg-slate-900/95 text-amber-200 text-xs px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 border border-amber-400/40 backdrop-blur-md transition-all animate-bounce">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
           <span className="font-semibold">{lastSyncNotice}</span>
         </div>

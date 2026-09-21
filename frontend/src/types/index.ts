@@ -34,6 +34,8 @@ export interface CompetitionParticipant {
   name: string;
   wing: string;
   flatNumber: string;
+  mobile?: string;
+  trackUrl?: string;
 }
 
 export interface NominationCategoryStat {

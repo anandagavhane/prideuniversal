@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Play, ExternalLink, ArrowRight, CheckCircle2, Users, Search, X, Filter, FileSpreadsheet, Sparkles } from 'lucide-react';
+import { Trophy, ExternalLink, ArrowRight, CheckCircle2, Users, Search, X, Filter, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { GOOGLE_NOMINATION_FORM_URL } from '../services/googleSheetsService';
 import { exportToExcel, normalizeCategory, isExcludedCategory } from '../services/nominationService';
+import { useBackButton } from '../hooks/useBackButton';
 import { CompetitionWinner, CompetitionParticipant } from '../types';
 
 interface CompetitionsSectionProps {
@@ -22,6 +23,7 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = React.mem
   onOpenNominationModal
 }) => {
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState<boolean>(false);
+  useBackButton('participants-modal', isParticipantsModalOpen, () => setIsParticipantsModalOpen(false), 75);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('All');
   const [selectedWingFilter, setSelectedWingFilter] = useState<'All' | 'A' | 'B'>('All');
   const [participantSearchQuery, setParticipantSearchQuery] = useState<string>('');
@@ -254,41 +256,9 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = React.mem
           </div>
         </div>
 
-        {/* Video Showcase & Cultural Patron Feature Row */}
-        <div className="mb-12 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Video Showcase Card */}
-          <div className="lg:col-span-7 bg-white rounded-2xl p-6 border-2 border-amber-300 shadow-md flex flex-col justify-between">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 shadow-inner">
-                <Play className="w-7 h-7 fill-red-700 ml-0.5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-red-800 uppercase tracking-wide">Featured Video</span>
-                <h4 className="text-lg sm:text-xl font-bold text-slate-900 font-festive">
-                  Ganesh Festival Dance & Cultural Showcase
-                </h4>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Watch previous years' cultural performances, kids' dances, drama skits, and devotional celebrations to get inspired!
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-amber-100">
-              <span className="text-xs font-medium text-amber-900">
-                🎬 Highlights from Pride Universal Pandal Stage
-              </span>
-              <button
-                onClick={onOpenVideo}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-700 hover:bg-red-800 text-white shadow transition-all flex-shrink-0"
-              >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Click to see video</span>
-              </button>
-            </div>
-          </div>
 
           {/* Cultural Inspiration / Arts Patron Frame */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-red-500/10 rounded-2xl p-4 border-2 border-amber-300 shadow-md flex items-center gap-4 relative overflow-hidden">
+          <div className="mb-12 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-red-500/10 rounded-2xl p-4 border-2 border-amber-300 shadow-md flex items-center gap-4 relative overflow-hidden">
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shadow-md border-2 border-amber-400 flex-shrink-0 bg-amber-950">
               <img 
                 src="/photos/ganesh1.avif" 
@@ -312,7 +282,6 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = React.mem
               </div>
             </div>
           </div>
-        </div>
 
         {/* Competition Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -420,15 +389,6 @@ export const CompetitionsSection: React.FC<CompetitionsSectionProps> = React.mem
                     >
                       <span>🏆 Winners</span>
                     </a>
-                  )}
-                  {card.hasVideo && (
-                    <button
-                      onClick={onOpenVideo}
-                      title="Watch Video"
-                      className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-colors cursor-pointer flex-shrink-0"
-                    >
-                      <Play className="w-4 h-4 fill-red-700" />
-                    </button>
                   )}
                 </div>
 

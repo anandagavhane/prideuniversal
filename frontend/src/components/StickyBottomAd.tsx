@@ -27,7 +27,7 @@ export const StickyBottomAd: React.FC<StickyBottomAdProps> = ({
   if (isDismissed || !currentAd) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 sm:hidden bg-gradient-to-r from-red-950 via-slate-900 to-red-950 text-amber-100 border-t-2 border-amber-400/80 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] p-2 animate-slideUp">
+    <div className="fixed bottom-0 left-0 right-0 z-30 sm:hidden bg-gradient-to-r from-red-950 via-slate-900 to-red-950 text-amber-100 border-t-2 border-amber-400/80 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] pt-2.5 px-3 pb-[max(env(safe-area-inset-bottom,0px),14px)] animate-slideUp">
       <div className="flex items-center justify-between gap-2">
         {/* Ad Image / Icon */}
         <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 border border-amber-400/50 flex-shrink-0">

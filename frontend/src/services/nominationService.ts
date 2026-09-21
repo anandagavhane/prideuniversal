@@ -9,6 +9,7 @@ export interface NominationFormEntry {
   flatNumber: string;
   mobile?: string;
   ageGroup?: string;
+  trackUrl?: string; // Audio / Song Track Link (YouTube, Drive, etc.)
   notes?: string;
   submittedAt: string; // ISO string
 }
@@ -200,7 +201,9 @@ export function mergeParticipantsWithLocalNominations(
           srNo: n.srNo || nextSrNo++,
           name: n.name,
           wing: n.wing,
-          flatNumber: n.flatNumber
+          flatNumber: n.flatNumber,
+          mobile: n.mobile,
+          trackUrl: n.trackUrl
         });
       }
     }
@@ -256,8 +259,9 @@ export function generateExcelWorkbookXml(
   uniqueParticipants.forEach((p, idx) => {
     const key = getParticipantKey(p.name, p.eventCategory, p.wing, p.flatNumber);
     const extra = detailsMap.get(key);
-    const mobile = extra?.mobile || '-';
+    const mobile = extra?.mobile || p.mobile || '-';
     const age = extra?.ageGroup || '-';
+    const track = extra?.trackUrl || p.trackUrl || '-';
     const notes = extra?.notes || '-';
     const submitted = extra?.submittedAt ? new Date(extra.submittedAt).toLocaleString('en-IN') : 'Official Sheet';
 
@@ -272,6 +276,7 @@ export function generateExcelWorkbookXml(
         <Cell ss:StyleID="${bgClass}Center"><Data ss:Type="String">${escapeXml(p.flatNumber)}</Data></Cell>
         <Cell ss:StyleID="${bgClass}Center"><Data ss:Type="String">${escapeXml(mobile)}</Data></Cell>
         <Cell ss:StyleID="${bgClass}Center"><Data ss:Type="String">${escapeXml(age)}</Data></Cell>
+        <Cell ss:StyleID="${bgClass}Left"><Data ss:Type="String">${escapeXml(track)}</Data></Cell>
         <Cell ss:StyleID="${bgClass}Left"><Data ss:Type="String">${escapeXml(notes)}</Data></Cell>
         <Cell ss:StyleID="${bgClass}Center"><Data ss:Type="String">${escapeXml(submitted)}</Data></Cell>
       </Row>`;
@@ -348,16 +353,17 @@ export function generateExcelWorkbookXml(
       <Column ss:Width="80"/>
       <Column ss:Width="110"/>
       <Column ss:Width="90"/>
+      <Column ss:Width="200"/>
       <Column ss:Width="180"/>
       <Column ss:Width="140"/>
 
       <Row ss:Height="30">
-        <Cell ss:MergeAcross="8" ss:StyleID="sTitle">
+        <Cell ss:MergeAcross="9" ss:StyleID="sTitle">
           <Data ss:Type="String">॥ श्री गणेशाय नमः ॥ ${escapeXml(festivalTitle)}</Data>
         </Cell>
       </Row>
       <Row ss:Height="20">
-        <Cell ss:MergeAcross="8" ss:StyleID="sSubtitle">
+        <Cell ss:MergeAcross="9" ss:StyleID="sSubtitle">
           <Data ss:Type="String">अधिकृत स्पर्धा नोंदणी यादी (Competition Nominations List) • Generated: ${escapeXml(generatedDate)} • Total: ${participants.length} Participants</Data>
         </Cell>
       </Row>
@@ -371,6 +377,7 @@ export function generateExcelWorkbookXml(
         <Cell ss:StyleID="sHeader"><Data ss:Type="String">फ्लॅट (Flat No)</Data></Cell>
         <Cell ss:StyleID="sHeader"><Data ss:Type="String">मोबाईल (Mobile)</Data></Cell>
         <Cell ss:StyleID="sHeader"><Data ss:Type="String">वय / गट (Age)</Data></Cell>
+        <Cell ss:StyleID="sHeader"><Data ss:Type="String">गाण्याची / ट्रॅक लिंक (Track Link)</Data></Cell>
         <Cell ss:StyleID="sHeader"><Data ss:Type="String">विशेष माहिती (Notes)</Data></Cell>
         <Cell ss:StyleID="sHeader"><Data ss:Type="String">नोंदणी तारीख (Submitted At)</Data></Cell>
       </Row>
@@ -421,6 +428,7 @@ export function generateExcelCsv(
     'Flat Number',
     'Mobile Number',
     'Age Group',
+    'Song / Audio Track Link',
     'Notes / Details',
     'Registration Date'
   ];
@@ -440,8 +448,9 @@ export function generateExcelCsv(
       escapeCsv(normalizeCategory(p.eventCategory)),
       escapeCsv(p.wing),
       escapeCsv(p.flatNumber),
-      escapeCsv(extra?.mobile || ''),
+      escapeCsv(extra?.mobile || p.mobile || ''),
       escapeCsv(extra?.ageGroup || ''),
+      escapeCsv(extra?.trackUrl || p.trackUrl || ''),
       escapeCsv(extra?.notes || ''),
       escapeCsv(extra?.submittedAt ? new Date(extra.submittedAt).toLocaleString('en-IN') : 'Official Sheet')
     ].join(',');
