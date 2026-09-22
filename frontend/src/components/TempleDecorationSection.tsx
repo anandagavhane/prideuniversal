@@ -77,7 +77,6 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
   // Playback & Interaction States
   const [isPlayingState, setIsPlayingState] = useState<Record<number, boolean>>({});
   const [showPlayIconIndex, setShowPlayIconIndex] = useState<number | null>(null);
-  const [activatedDriveVideos, setActivatedDriveVideos] = useState<Record<number, boolean>>({});
 
   // Like counters with localStorage persistence (starts cleanly at 0 or user saved count)
   const [likesState, setLikesState] = useState<Record<string, { count: number; liked: boolean }>>(() => {
@@ -273,15 +272,7 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
       });
     }
 
-    // 5. Deactivate other Google Drive videos so their iframes are unmounted (only exceptIdx remains active)
-    setActivatedDriveVideos((prev) => {
-      if (exceptIdx === undefined) return {};
-      const keys = Object.keys(prev);
-      if (keys.length === 1 && keys[0] === String(exceptIdx)) return prev;
-      return { [exceptIdx]: true };
-    });
-
-    // 6. Sync isPlayingState
+    // 5. Sync isPlayingState
     setIsPlayingState((prev) => {
       const updated: Record<number, boolean> = {};
       if (exceptIdx !== undefined && prev[exceptIdx]) {
@@ -305,35 +296,35 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
       return;
     }
 
-    // 1. Google Drive Video: stop all others and activate only this one
+    // 1. Google Drive Video: open directly in native Google Drive app / viewer
     if (slide.mediaType === 'drive-video') {
-      stopAllOtherMedia(idx, isFullscreen);
-      setActivatedDriveVideos({ [idx]: true });
-      setIsPlayingState({ [idx]: true });
-      setShowPlayIconIndex(idx);
-      setTimeout(() => setShowPlayIconIndex(null), 800);
+      if (slide.driveFileId) {
+        window.open(`https://drive.google.com/file/d/${slide.driveFileId}/view`, '_blank');
+      }
       return;
     }
 
     // 2. Direct HTML5 Video
-    const videoList = isFullscreen ? fullscreenVideoRefs.current : reelVideoRefs.current;
-    const videoEl = videoList[idx];
-    if (videoEl) {
-      if (videoEl.paused) {
-        stopAllOtherMedia(idx, isFullscreen);
-        videoEl.muted = isMuted;
-        videoEl.play().then(() => {
-          setIsPlayingState({ [idx]: true });
-        }).catch((err) => {
-          console.warn('Play error:', err);
-        });
-      } else {
-        videoEl.pause();
-        setIsPlayingState({});
+    if (slide.mediaType === 'video') {
+      const videoList = isFullscreen ? fullscreenVideoRefs.current : reelVideoRefs.current;
+      const videoEl = videoList[idx];
+      if (videoEl) {
+        if (videoEl.paused) {
+          stopAllOtherMedia(idx, isFullscreen);
+          videoEl.muted = isMuted;
+          videoEl.play().then(() => {
+            setIsPlayingState({ [idx]: true });
+          }).catch((err) => {
+            console.warn('Play error:', err);
+          });
+        } else {
+          videoEl.pause();
+          setIsPlayingState({});
+        }
+        setShowPlayIconIndex(idx);
+        setTimeout(() => setShowPlayIconIndex(null), 800);
+        return;
       }
-      setShowPlayIconIndex(idx);
-      setTimeout(() => setShowPlayIconIndex(null), 800);
-      return;
     }
 
     // 3. YouTube Video via PostMessage
@@ -468,9 +459,9 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
               // Immediately pause all previous videos across HTML5, Drive & YouTube
               stopAllOtherMedia(index, false);
 
-              // Play new video if this reel is a direct video
+              // Play new video if this reel is a direct video or direct-stream Drive video
               const currentVideo = reelVideoRefs.current[index];
-              if (currentVideo && currentReelSlides[index]?.mediaType === 'video') {
+              if (currentVideo && (currentReelSlides[index]?.mediaType === 'video' || currentReelSlides[index]?.mediaType === 'drive-video')) {
                 currentVideo.muted = isMuted;
                 currentVideo.defaultMuted = isMuted;
                 currentVideo.play().then(() => {
@@ -527,7 +518,7 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
               stopAllOtherMedia(index, true);
 
               const currentVideo = fullscreenVideoRefs.current[index];
-              if (currentVideo && currentReelSlides[index]?.mediaType === 'video') {
+              if (currentVideo && (currentReelSlides[index]?.mediaType === 'video' || currentReelSlides[index]?.mediaType === 'drive-video')) {
                 currentVideo.muted = isMuted;
                 currentVideo.defaultMuted = isMuted;
                 currentVideo.play().then(() => {
@@ -590,6 +581,25 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
     if (inlineClassicVideoRef.current) {
       inlineClassicVideoRef.current.muted = isMuted;
       inlineClassicVideoRef.current.defaultMuted = isMuted;
+    }
+
+    // Sync YouTube iframe audio state
+    if (typeof document !== 'undefined') {
+      const ytIframes = document.querySelectorAll<HTMLIFrameElement>('iframe[data-reel-yt], iframe[data-fullscreen-yt]');
+      ytIframes.forEach((iframe) => {
+        try {
+          iframe.contentWindow?.postMessage(
+            JSON.stringify({
+              event: 'command',
+              func: isMuted ? 'mute' : 'unMute',
+              args: ''
+            }),
+            '*'
+          );
+        } catch {
+          // ignore
+        }
+      });
     }
   }, [isMuted]);
 
@@ -862,81 +872,6 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                               className="w-full h-full border-0 absolute inset-0 object-cover pointer-events-none"
                             />
                           </div>
-                        ) : slide.mediaType === 'drive-video' ? (
-                          <div className="w-full h-full relative flex items-center justify-center bg-black">
-                            {!activatedDriveVideos[idx] ? (
-                              <div 
-                                className="w-full h-full relative flex items-center justify-center cursor-pointer group"
-                                onClick={() => {
-                                  stopAllOtherMedia(idx, false);
-                                  setActivatedDriveVideos({ [idx]: true });
-                                  setIsPlayingState({ [idx]: true });
-                                }}
-                              >
-                                <img
-                                  src={slide.imageUrl || (slide.driveFileId ? `https://drive.google.com/thumbnail?id=${slide.driveFileId}&sz=w1600` : '/photos/memories_2025_idol.jpeg')}
-                                  alt={slide.title}
-                                  referrerPolicy="no-referrer"
-                                  className="w-full h-full object-cover sm:object-contain"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
-                                  }}
-                                />
-                                {/* Prominent Dual Play Action Overlay */}
-                                <div className="absolute inset-0 bg-black/45 flex flex-col items-center justify-center gap-3 select-none p-4 text-center">
-                                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-600 group-hover:bg-red-500 text-white flex items-center justify-center shadow-2xl border-2 border-white transition-all transform group-hover:scale-110 group-active:scale-95 animate-pulse">
-                                    <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white translate-x-1" />
-                                  </div>
-                                  <div className="flex flex-col items-center gap-2 max-w-xs">
-                                    <span className="px-4 py-1.5 rounded-full bg-red-600/90 text-white text-xs font-black shadow-md border border-red-400/50">
-                                      ▶️ येथे प्ले करा (Tap to Play)
-                                    </span>
-                                    {slide.driveFileId && (
-                                      <a
-                                        href={`https://drive.google.com/file/d/${slide.driveFileId}/view`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="px-3.5 py-1 rounded-full bg-black/80 hover:bg-black text-amber-300 text-[11px] font-bold border border-amber-400/50 backdrop-blur-md shadow-sm flex items-center gap-1 active:scale-95 transition-all"
-                                      >
-                                        <span>🎬 Google Drive मध्ये थेट HD पहा</span>
-                                        <ExternalLink className="w-3 h-3 text-amber-400" />
-                                      </a>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="w-full h-full relative">
-                                <iframe
-                                  src={`https://drive.google.com/file/d/${slide.driveFileId || ''}/preview`}
-                                  title={slide.title}
-                                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                                  allowFullScreen
-                                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                                  className="w-full h-full border-0 absolute inset-0 object-contain z-10 pointer-events-auto"
-                                />
-                                {/* Top Fallback Bar if video is buffering or blocked in mobile webview */}
-                                {slide.driveFileId && (
-                                  <div className="absolute top-10 inset-x-3 z-30 flex items-center justify-between bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-400/40 text-xs shadow-lg pointer-events-auto">
-                                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                                      <Sparkles className="w-3 h-3 text-amber-400" />
-                                      व्हिडिओ सुरू न झाल्यास:
-                                    </span>
-                                    <a
-                                      href={`https://drive.google.com/file/d/${slide.driveFileId}/view`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-2.5 py-0.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-extrabold text-[10px] flex items-center gap-1 shadow-sm active:scale-95"
-                                    >
-                                      <span>HD मध्ये उघडा</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
                         ) : slide.mediaType === 'video' ? (
                           <div className="w-full h-full relative flex items-center justify-center bg-black">
                             <video
@@ -946,7 +881,7 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                               playsInline
                               loop
                               autoPlay={isCurrent}
-                              preload="auto"
+                              preload="metadata"
                               muted={isMuted}
                               onError={() => setDirectVideoError(true)}
                               className="w-full h-full object-cover sm:object-contain absolute inset-0"
@@ -956,6 +891,35 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                               }}
                               onPause={() => setIsPlayingState({})}
                             />
+                          </div>
+                        ) : slide.mediaType === 'drive-video' ? (
+                          <div className="w-full h-full relative flex flex-col items-center justify-center bg-black">
+                            <img
+                              src={slide.imageUrl || `https://lh3.googleusercontent.com/d/${slide.driveFileId}`}
+                              alt={slide.title}
+                              className="w-full h-full object-cover opacity-60 pointer-events-none"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-6 text-center gap-3.5 z-10 select-none">
+                              <a
+                                href={`https://drive.google.com/file/d/${slide.driveFileId}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl border-2 border-white transition-all transform hover:scale-110 active:scale-95 animate-pulse"
+                              >
+                                <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white translate-x-1" />
+                              </a>
+                              <div className="flex flex-col items-center gap-1.5 max-w-xs">
+                                <span className="px-3.5 py-1.5 rounded-full bg-red-600 text-white text-xs font-black shadow-md border border-red-400/50">
+                                  🎬 थेट Google Drive मध्ये HD पहा
+                                </span>
+                                <span className="text-[11px] text-amber-300 font-semibold">
+                                  (YouTube वर अपलोड प्रक्रिया सुरू आहे)
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <div className="w-full h-full relative flex items-center justify-center bg-black pointer-events-none">
@@ -972,18 +936,16 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                         )}
 
                         {/* Transparent touch & click gesture overlay guaranteeing touch vertical pan on mobile */}
-                        {(!activatedDriveVideos[idx] || slide.mediaType !== 'drive-video') && (
-                          <div 
-                            className="absolute inset-0 z-10 bg-transparent cursor-pointer touch-pan-y flex items-center justify-center"
-                            onClick={() => handleVideoClick(idx, false)}
-                          >
-                            {showPlayIconIndex === idx && (
-                              <div className="w-16 h-16 rounded-full bg-black/70 text-white flex items-center justify-center border border-white/50 backdrop-blur-md animate-scaleIn pointer-events-none shadow-2xl">
-                                {isPlayingState[idx] ? <Play className="w-8 h-8 fill-white translate-x-0.5" /> : <Pause className="w-8 h-8 fill-white" />}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        <div 
+                          className="absolute inset-0 z-10 bg-transparent cursor-pointer touch-pan-y flex items-center justify-center"
+                          onClick={() => handleVideoClick(idx, false)}
+                        >
+                          {showPlayIconIndex === idx && (
+                            <div className="w-16 h-16 rounded-full bg-black/70 text-white flex items-center justify-center border border-white/50 backdrop-blur-md animate-scaleIn pointer-events-none shadow-2xl">
+                              {isPlayingState[idx] ? <Play className="w-8 h-8 fill-white translate-x-0.5" /> : <Pause className="w-8 h-8 fill-white" />}
+                            </div>
+                          )}
+                        </div>
 
                         {/* Subtle Dark Vignette Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/50 pointer-events-none z-15" />
@@ -1268,24 +1230,33 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                           muted={isMuted}
                           loop
                           playsInline
-                          preload="auto"
+                          preload="metadata"
                           onError={() => setDirectVideoError(true)}
                           className="w-full h-full object-contain sm:object-cover absolute inset-0 z-0 pointer-events-none"
                         />
                         <div className="absolute inset-0 bg-transparent z-10" />
                       </div>
                     ) : currentSlide.mediaType === 'drive-video' ? (
-                      /* Google Drive Preview Player */
-                      <div className="w-full h-full relative bg-black">
-                        <iframe
-                          key={`drive-classic-${currentSlide.driveFileId || currentSlideIndex}`}
-                          src={`https://drive.google.com/file/d/${currentSlide.driveFileId}/preview`}
-                          title={currentSlide.title}
-                          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                          allowFullScreen
-                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                          className="w-full h-full border-0 absolute inset-0 z-10 pointer-events-auto"
+                      <div className="w-full h-full relative flex flex-col items-center justify-center bg-black">
+                        <img
+                          src={currentSlide.imageUrl || `https://lh3.googleusercontent.com/d/${currentSlide.driveFileId}`}
+                          alt={currentSlide.title}
+                          className="w-full h-full object-cover opacity-60 pointer-events-none"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
+                          }}
                         />
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 text-center gap-2.5 z-10">
+                          <a
+                            href={`https://drive.google.com/file/d/${currentSlide.driveFileId}/view`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg border border-red-400"
+                          >
+                            <Play className="w-4 h-4 fill-white" />
+                            <span>Google Drive मध्ये उघडा</span>
+                          </a>
+                        </div>
                       </div>
                     ) : (
                       /* Static Image */
@@ -1562,35 +1533,6 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                           className="w-full h-full border-0 absolute inset-0 object-contain z-10 pointer-events-auto"
                         />
                       </div>
-                    ) : slide.mediaType === 'drive-video' ? (
-                      <div className="w-full h-full relative flex items-center justify-center bg-black">
-                        <iframe
-                          src={`https://drive.google.com/file/d/${slide.driveFileId || ''}/preview`}
-                          title={slide.title}
-                          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                          allowFullScreen
-                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                          className="w-full h-full border-0 absolute inset-0 object-contain z-10 pointer-events-auto"
-                        />
-                        {/* Direct Open Button inside Fullscreen Modal */}
-                        {slide.driveFileId && (
-                          <div className="absolute top-14 inset-x-4 z-30 flex items-center justify-between bg-black/85 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-xl border border-amber-400/40 shadow-xl max-w-md mx-auto pointer-events-auto">
-                            <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                              व्हिडिओ सुरू न झाल्यास:
-                            </span>
-                            <a
-                              href={`https://drive.google.com/file/d/${slide.driveFileId}/view`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md active:scale-95"
-                            >
-                              <span>HD पहा</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
                     ) : slide.mediaType === 'video' ? (
                       <div className="w-full h-full relative flex items-center justify-center bg-black">
                         <video
@@ -1601,7 +1543,7 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                           loop
                           controls
                           autoPlay={isCurrent}
-                          preload="auto"
+                          preload="metadata"
                           muted={isMuted}
                           onError={() => setDirectVideoError(true)}
                           className="w-full h-full object-contain absolute inset-0 z-10 pointer-events-auto"
@@ -1611,6 +1553,28 @@ export const TempleDecorationSection: React.FC<TempleDecorationSectionProps> = R
                           }}
                           onPause={() => setIsPlayingState({})}
                         />
+                      </div>
+                    ) : slide.mediaType === 'drive-video' ? (
+                      <div className="w-full h-full relative flex flex-col items-center justify-center bg-black">
+                        <img
+                          src={slide.imageUrl || `https://lh3.googleusercontent.com/d/${slide.driveFileId}`}
+                          alt={slide.title}
+                          className="w-full h-full object-contain opacity-70 pointer-events-none"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/photos/memories_2025_idol.jpeg';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-6 text-center gap-3.5 z-10 select-none">
+                          <a
+                            href={`https://drive.google.com/file/d/${slide.driveFileId}/view`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-2xl border border-red-400 active:scale-95"
+                          >
+                            <Play className="w-4 h-4 fill-white" />
+                            <span>Google Drive मध्ये HD पहा</span>
+                          </a>
+                        </div>
                       </div>
                     ) : (
                       <div className="w-full h-full relative flex items-center justify-center bg-black pointer-events-none">
